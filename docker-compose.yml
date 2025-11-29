@@ -6,6 +6,8 @@ services:
     container_name: backend_c
     env_file:
       - ./backend/.env
+    environment:
+      - NODE_ENV=production
     ports:
       - "5000:5000"
     restart: always
@@ -13,6 +15,8 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend_c
+    environment:
+      - NODE_ENV=production
     ports:
       - "80:80"
     restart: always
