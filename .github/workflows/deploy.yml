@@ -21,26 +21,25 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ubuntu@${{ secrets.EC2_PUBLIC_IP }} "
             set -e
 
             cd ~/chat_app
 
-            echo "Backing up current version..."
+            echo 'Backing up current version...'
             rm -rf chat_app_prev
             cp -r chat_app chat_app_prev
 
-            echo "Pulling latest code..."
+            echo 'Pulling latest code...'
             cd chat_app
             git pull origin main
 
-            echo "Stopping existing containers..."
+            echo 'Stopping existing containers...'
             sudo docker-compose down
 
-            echo "Building and starting new version..."
+            echo 'Building and starting new version...'
             if ! sudo docker-compose up -d --build; then
-              echo "Build failed. Rolling back."
+              echo 'Build failed. Rolling back.'
               cd ~/chat_app
               rm -rf chat_app
               mv chat_app_prev chat_app
@@ -48,30 +47,29 @@ jobs:
               exit 1
             fi
 
-            echo "Cleaning unused Docker resources..."
+            echo 'Cleaning unused Docker resources...'
             sudo docker system prune -af
 
-            echo "Running health checks..."
+            echo 'Running health checks...'
 
-            BACKEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health)
-            FRONTEND_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+            BACKEND_STATUS=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/health)
+            FRONTEND_STATUS=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)
 
-            if [ "\$BACKEND_STATUS" != "200" ] || [ "\$FRONTEND_STATUS" != "200" ]; then
-              echo "Health check failed."
-              echo "Backend: \$BACKEND_STATUS, Frontend: \$FRONTEND_STATUS"
+            if [ \"\$BACKEND_STATUS\" != \"200\" ] || [ \"\$FRONTEND_STATUS\" != \"200\" ]; then
+              echo 'Health check failed.'
+              echo \"Backend: \$BACKEND_STATUS, Frontend: \$FRONTEND_STATUS\"
 
-              echo "Rolling back to previous version..."
+              echo 'Rolling back to previous version...'
               cd ~/chat_app
               sudo docker-compose -f chat_app/docker-compose.yml down || true
               rm -rf chat_app
               mv chat_app_prev chat_app
               sudo docker-compose -f chat_app/docker-compose.yml up -d
 
-              echo "Rollback completed."
+              echo 'Rollback completed.'
               exit 1
             fi
 
-            echo "Deployment successful. Cleaning backup."
+            echo 'Deployment successful. Cleaning backup.'
             rm -rf ~/chat_app/chat_app_prev
-
-          EOF
+          "
