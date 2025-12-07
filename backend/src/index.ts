@@ -3,6 +3,8 @@ dotenv.config();
 import cookieParser from "cookie-parser";
 import express, { Application, Request, Response } from "express";
 import mongoDb from "./libs/db";
+import authRoutes from "./routes/authRoute";
+import { healthCheck } from "./controllers/health.controller";
 
 const app: Application = express();
 
@@ -11,24 +13,13 @@ app.use(cookieParser());
 
 mongoDb();
 
-import authRoutes from "./routes/authRoute";
-
-
-app.get("/api/health", (_req: Request, res: Response) => {
-  res.json({
-    status: "ok",
-    environment: process.env.NODE_ENV || "development",
-    time: new Date().toISOString(),
-  });
-});
-
-app.get("/", (req: Request, res: Response) => {
+app.get("/api/health",healthCheck)
+  
+app.get("/api/", (req: Request, res: Response) => {
   res.send("Server is running ....");
 });
-
 app.use("/api/auth", authRoutes);
 
-console.log("testing");
 const port: number = parseInt(process.env.PORT || "5000", 10);
 
 const host = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
