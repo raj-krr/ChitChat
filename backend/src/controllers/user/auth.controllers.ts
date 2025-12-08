@@ -1,12 +1,11 @@
-import UserMOdel from "../models/user.model";
-import {generateCode } from "../utils/otp";
-import { forgetPasswordOtpMail, sendVerificationMail, welcomeEmail } from "../utils/email";
+import UserMOdel from "../../models/user.model";
+import {generateCode } from "../../utils/otp";
+import { forgetPasswordOtpMail, sendVerificationMail, welcomeEmail } from "../../utils/email";
 import bcrypt from "bcryptjs";
-import { Request, response, Response } from "express";
+import { Request, Response } from "express";
 import { error } from "console";
-import { generateToken } from "../utils/generateToken";
-import { logoutOptions, options } from "../utils/cookie";
-import { userInfo } from "os";
+import { generateToken } from "../../utils/generateToken";
+import { logoutOptions, options } from "../../utils/cookie";
 
 
  export const register = async (req: Request, res: Response) => {
@@ -148,7 +147,7 @@ export const login = async (req: Request, res: Response) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ success: false, msg: "wrong password" });
 
-        if (user.isVerified = false) {
+        if (user.isVerified === false) {
             return res.status(403).json({ success: false, msg: "email not verified yet" });
         };
 

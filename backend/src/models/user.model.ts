@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
         lastName: { type: String },
         gender: { type: String, enum: ["male", "female", "other"] },
         dob: { type: Date },
+        bio:{type:String},
         avatar: { type: String },
     },
     { timestamps: true }

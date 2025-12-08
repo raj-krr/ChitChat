@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 import express, { Application, Request, Response } from "express";
 import mongoDb from "./libs/db";
 import authRoutes from "./routes/authRoute";
+import meRoutes from "./routes/meRoutes";
+import messageRoute from "./routes/messageRoute"
 import { healthCheck } from "./controllers/health.controller";
 
 const app: Application = express();
@@ -19,6 +21,8 @@ app.get("/api/", (req: Request, res: Response) => {
   res.send("Server is running ....");
 });
 app.use("/api/auth", authRoutes);
+app.use("/api/me", meRoutes);
+app.use("/api/message", messageRoute);
 
 const port: number = parseInt(process.env.PORT || "5000", 10);
 
