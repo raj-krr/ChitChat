@@ -24,7 +24,7 @@ jobs:
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-8)
 
-          docker build -t $DOCKERHUB_REPO_BACKEND:latest ./chat_app/chat_app/backend
+          docker build -t $DOCKERHUB_REPO_BACKEND:latest ./chat_app/backend
           docker tag $DOCKERHUB_REPO_BACKEND:latest $DOCKERHUB_REPO_BACKEND:sha-$SHA
 
           docker push $DOCKERHUB_REPO_BACKEND:latest
@@ -39,7 +39,7 @@ jobs:
           docker build \
             --build-arg VITE_API_URL=$VITE_API_URL \
             -t $DOCKERHUB_REPO_FRONTEND:latest \
-            ./chat_app/chat_app/frontend
+            ./chat_app/frontend
 
           docker tag $DOCKERHUB_REPO_FRONTEND:latest $DOCKERHUB_REPO_FRONTEND:sha-$SHA
 
@@ -77,11 +77,11 @@ jobs:
             sudo docker pull $DOCKERHUB_REPO_BACKEND:sha-$SHA_SHORT
             sudo docker pull $DOCKERHUB_REPO_FRONTEND:sha-$SHA_SHORT
 
-            echo '--- Updating docker-compose version tags ---'
+            echo '--- Updating docker-compose SHA tags ---'
             sudo sed -i "s|rajkrr/chat_app_backend:.*|rajkrr/chat_app_backend:sha-$SHA_SHORT|g" docker-compose.yml
             sudo sed -i "s|rajkrr/chat_app_frontend:.*|rajkrr/chat_app_frontend:sha-$SHA_SHORT|g" docker-compose.yml
 
-            echo '--- Restarting docker-compose ---'
+            echo '--- Restarting application ---'
             sudo docker compose down || true
 
             if ! sudo docker compose up -d; then
@@ -94,15 +94,15 @@ jobs:
               exit 1
             fi
 
-            echo '--- Deployment SUCCESS. Marking previous stable ---'
+            echo '--- Marking current build as previous stable ---'
             sudo docker tag $DOCKERHUB_REPO_BACKEND:sha-$SHA_SHORT $DOCKERHUB_REPO_BACKEND:previous
             sudo docker tag $DOCKERHUB_REPO_FRONTEND:sha-$SHA_SHORT $DOCKERHUB_REPO_FRONTEND:previous
 
             sudo docker push $DOCKERHUB_REPO_BACKEND:previous
             sudo docker push $DOCKERHUB_REPO_FRONTEND:previous
 
-            echo '--- Cleanup unused Docker images ---'
+            echo '--- Cleaning unused images ---'
             sudo docker image prune -af || true
 
-            echo '--- DONE ---'
+            echo '--- Deployment COMPLETE 🎉 ---'
           EOF
