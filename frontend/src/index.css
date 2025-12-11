@@ -1,15 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-.bg-grid {
-  background-image:
-    linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px);
-  background-size: 40px 40px;
-  animation: gridMove 18s linear infinite;
+
+.chitchat-title-glow {
+  animation: chitchatGlow 3s ease-in-out infinite alternate;
 }
+
+@keyframes chitchatGlow {
+  from {
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+  to {
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+  }
+}
+
+.input-valid {
+  border-color: #22c55e !important;          /* Tailwind green-500 */ 
+  transition: all 0.25s ease;
+}
+
+.input-error {
+  border-color: #dc2626 !important;           /* red-600 */
+  transition: all 0.25s ease;
+}
+
 
 @keyframes gridMove {
   from { background-position: 0 0; }
@@ -21,6 +38,24 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes errorFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridMove 18s linear infinite;
+}
 .fade-in {
   animation: fadeInSmooth 0.8s ease-out forwards;
 }
@@ -38,5 +73,20 @@
 
 .tilt-hover:hover {
   transform: perspective(600px) rotateX(3deg) rotateY(-3deg);
+}
+
+.error-fade {
+  animation: errorFadeIn 0.25s ease-out forwards;
+}
+
+@keyframes errorFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 

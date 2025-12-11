@@ -3,24 +3,85 @@ import { Button, TextInput, PasswordInput, Group, Text } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../apis/auth.api";
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const usernameRegex = /^[a-zA-Z0-9._-]+$/;
+const passwordRegex = /^[\x20-\x7E]+$/; // standard keyboard chars only
+
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [identifier, setEmailOrUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [identifierError, setIdentifierError] = useState("");
+const [passwordError, setPasswordError] = useState("");
 
-  const handleLogin = async () => {
-    if (!identifier || !password) {
-      alert("All fields are required");
-      return;
-    }
+  
+  const validateInputs = () => {
+  let isValid = true;
 
-    try {
-      await loginApi({identifier, password});
-      navigate("/dashboard");
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Login failed");
+  // Reset old errors
+  setIdentifierError("");
+  setPasswordError("");
+
+  // Identifier empty?
+  if (!identifier.trim()) {
+    setIdentifierError("Identifier is required");
+    isValid = false;
+  } else if (identifier.length > 50) {
+    setIdentifierError("Maximum length is 50 characters");
+    isValid = false;
+  } else if (identifier.includes("@")) {
+    // treat as email
+    if (!emailRegex.test(identifier)) {
+      setIdentifierError("Invalid email format");
+      isValid = false;
     }
-  };
+  } else {
+    // treat as username
+    if (!usernameRegex.test(identifier)) {
+      setIdentifierError("Username cannot contain spaces or emojis");
+      isValid = false;
+    }
+  }
+
+  // Password validation
+  if (!password.trim()) {
+    setPasswordError("Password is required");
+    isValid = false;
+  } else if (password.length > 20) {
+    setPasswordError("Password must be 20 characters max");
+    isValid = false;
+  } else if (!passwordRegex.test(password)) {
+    setPasswordError("Password contains invalid characters");
+    isValid = false;
+  }
+
+  return isValid;
+};
+
+
+ const handleLogin = async () => {
+  if (!validateInputs()) return;
+
+  try {
+     await loginApi({ identifier, password });
+
+    navigate("/dashboard");
+  } catch (err: any) {
+    const msg = err.response?.data?.msg;
+
+    if (msg === "wrong password") {
+      setPasswordError("Incorrect password");
+    } else if (msg === "User not found") {
+      setIdentifierError("No user exists with this identifier");
+    } else if (msg?.includes("email not verified yet")) {
+      setPasswordError("email not verified yet.");
+    }
+  }
+};
+
+  
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 relative overflow-hidden">
@@ -49,25 +110,56 @@ export default function LoginPage() {
 
         {/* Input fields */}
         <div className="space-y-4">
-          <TextInput
-            label="Email or Username"
-            placeholder="Enter email or username"
-            radius="md"
-            size="md"
-            value={identifier}
-            onChange={(e) => setEmailOrUsername(e.target.value)}
-            className="backdrop-blur-md"
-          />
+ <TextInput
+  label="Email or Username"
+  placeholder="Enter email or username"
+  radius="md"
+  size="md"
+  value={identifier}
+  onChange={(e) => {
+    const val = e.target.value;
+    if (val.length <= 50) setIdentifier(val);
+  }}
+  error={
+    identifierError && (
+      <span className="text-red-600 text-sm error-fade">{identifierError}</span>
+    )
+  }
+  className={
+    identifierError
+      ? "input-error"
+      : identifier && !identifierError
+      ? "input-valid"
+      : ""
+  }
+/>
 
-          <PasswordInput
-            label="Password"
-            placeholder="Enter your password"
-            radius="md"
-            size="md"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="backdrop-blur-md"
-          />
+
+<PasswordInput
+  label="Password"
+  placeholder="Enter your password"
+  radius="md"
+  size="md"
+  value={password}
+  onChange={(e) => {
+    const val = e.target.value;
+    if (val.length <= 20) setPassword(val);
+  }}
+  error={
+    passwordError && (
+      <span className="text-red-600 text-sm error-fade">{passwordError}</span>
+    )
+  }
+  className={
+    passwordError
+      ? "input-error"
+      : password && !passwordError
+      ? "input-valid"
+      : ""
+  }
+/>
+
+
         </div>
 
         {/* Buttons */}
