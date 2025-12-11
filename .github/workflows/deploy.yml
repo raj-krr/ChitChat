@@ -34,7 +34,7 @@ jobs:
           docker push $DOCKERHUB_REPO_BACKEND:sha-$SHA
 
       # -------------------------------
-      # BUILD FRONTEND (with Vite ENV)
+      # BUILD FRONTEND
       # -------------------------------
       - name: Build & push frontend image (latest + SHA tag)
         env:
@@ -75,6 +75,9 @@ jobs:
             set -e
             cd ~/chat_app/chat_app
 
+            echo '--- Pulling latest code from GitHub (sync compose) ---'
+            git pull     # 🔥 Keeps docker-compose.yml synced with GitHub
+
             echo '--- Copying env files ---'
             cp -f ../env/backend.env ./backend/.env
             cp -f ../env/frontend.env ./frontend/.env || true
@@ -83,7 +86,7 @@ jobs:
             sudo docker pull $DOCKERHUB_REPO_BACKEND:sha-$SHA_SHORT
             sudo docker pull $DOCKERHUB_REPO_FRONTEND:sha-$SHA_SHORT
 
-            echo '--- Updating docker-compose SHA tags ---'
+            echo '--- Updating docker-compose to use new SHA tags ---'
             sudo sed -i "s|rajkrr/chat_app_backend:.*|rajkrr/chat_app_backend:sha-$SHA_SHORT|g" docker-compose.yml
             sudo sed -i "s|rajkrr/chat_app_frontend:.*|rajkrr/chat_app_frontend:sha-$SHA_SHORT|g" docker-compose.yml
 
