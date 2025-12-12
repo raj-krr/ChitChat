@@ -25,14 +25,12 @@ export default function ForgotPassword() {
       return false;
     }
 
-    // treat as email if contains "@"
     if (identifier.includes("@")) {
       if (!emailRegex.test(identifier)) {
         setError("Invalid email format");
         return false;
       }
     } else {
-      // treat as username
       if (!usernameRegex.test(identifier)) {
         setError("Invalid username format");
         return false;
@@ -58,8 +56,14 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 relative overflow-hidden">
-
+    <div
+      className="
+        min-h-screen flex items-center justify-center
+        bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
+        chitchat-bg
+        p-6 relative overflow-hidden
+      "
+    >
       {/* Background grid */}
       <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
 
@@ -113,7 +117,11 @@ export default function ForgotPassword() {
           onClick={handleForgot}
           loading={loading}
           disabled={loading}
-          className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1 transform-gpu"
+          className="
+            transition-all duration-300 
+            hover:shadow-xl hover:-translate-y-1 
+            transform-gpu
+          "
         >
           Send OTP
         </Button>

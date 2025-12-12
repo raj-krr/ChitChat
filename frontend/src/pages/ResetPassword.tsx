@@ -21,14 +21,14 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  // --- Timer countdown ---
+  // ---------------- TIMER ----------------
   useEffect(() => {
     if (timer === 0) return;
     const interval = setInterval(() => setTimer((t) => t - 1), 1000);
     return () => clearInterval(interval);
   }, [timer]);
 
-  // --- OTP Input Change ---
+  // ---------------- OTP CHANGE ----------------
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
 
@@ -48,7 +48,7 @@ export default function ResetPassword() {
     }
   };
 
-  // --- Paste full OTP ---
+  // ---------------- OTP PASTE ----------------
   const handlePasteOtp = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     const paste = e.clipboardData.getData("text").trim();
@@ -58,13 +58,15 @@ export default function ResetPassword() {
     inputRefs.current[5]?.focus();
   };
 
-  // --- Validation ---
+  // ---------------- VALIDATION ----------------
   const validateInputs = () => {
     let ok = true;
     setOtpError("");
     setPasswordError("");
 
-    if (otpDigits.join("").length !== 6) {
+    const otpStr = otpDigits.join("");
+
+    if (otpStr.length !== 6) {
       setOtpError("OTP must be 6 digits");
       ok = false;
     }
@@ -80,7 +82,7 @@ export default function ResetPassword() {
     return ok;
   };
 
-  // --- Submit Reset Password ---
+  // ---------------- SUBMIT RESET ----------------
   const handleReset = async () => {
     if (!validateInputs()) return;
 
@@ -101,7 +103,7 @@ export default function ResetPassword() {
     }
   };
 
-  // --- Resend OTP ---
+  // ---------------- RESEND OTP ----------------
   const handleResend = async () => {
     setOtpError("");
     try {
@@ -116,14 +118,22 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 sm:p-6 relative overflow-hidden">
+    <div
+      className="
+        min-h-screen flex items-center justify-center 
+        bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
+        chitchat-bg
+        p-4 sm:p-6 relative overflow-hidden
+      "
+    >
       <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
 
-      {/* WRAPPER CARD */}
+      {/* CARD */}
       <div
         className="
           w-full max-w-lg rounded-3xl p-6 sm:p-8
           backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl
+          fade-in glow-hover tilt-hover
           relative z-10 flex flex-col gap-6
         "
       >
@@ -146,17 +156,16 @@ export default function ResetPassword() {
             Enter OTP
           </label>
 
-          {/* OTP BOXES */}
           <div
             className="flex gap-2 sm:gap-3 justify-center"
             onPaste={handlePasteOtp}
           >
             {otpDigits.map((digit, i) => (
               <input
-                key={i}
-                ref={(el) => {
-                  inputRefs.current[i] = el;
-                }}
+  key={i}
+  ref={(el) => {
+    inputRefs.current[i] = el; // FIXED: no returned value
+  }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -170,18 +179,17 @@ export default function ResetPassword() {
                 "
                 onChange={(e) => handleOtpChange(i, e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Backspace') handleBackspace(i, digit);
+                  if (e.key === "Backspace") handleBackspace(i, digit);
                 }}
               />
             ))}
           </div>
 
-          {/* Error */}
           <div className="min-h-[18px]">
             {otpError && <span className="text-red-600 text-sm">{otpError}</span>}
           </div>
 
-          {/* RESEND OTP text */}
+          {/* RESEND TEXT */}
           <Text className="text-sm text-gray-900">
             Didn’t receive OTP?{" "}
             {timer > 0 ? (
@@ -189,19 +197,18 @@ export default function ResetPassword() {
                 Resend in {timer}s
               </span>
             ) : (
-                <button
-                  className="font-semibold text-indigo-900 underline disabled:opacity-50"
-                  onClick={handleResend}
-                  disabled={resendLoading}
-                >
-                  {resendLoading ? "Sending..." : "Resend OTP"}
-                </button>
-
+              <button
+                className="font-semibold text-indigo-900 underline disabled:opacity-50"
+                onClick={handleResend}
+                disabled={resendLoading}
+              >
+                {resendLoading ? "Sending..." : "Resend OTP"}
+              </button>
             )}
           </Text>
         </div>
 
-        {/* NEW PASSWORD */}
+        {/* NEW PASSWORD FIELD */}
         <PasswordInput
           label="New Password"
           placeholder="Enter new password"
@@ -227,7 +234,7 @@ export default function ResetPassword() {
           fullWidth
           onClick={handleReset}
           loading={loading}
-          className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          className="transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
         >
           Reset Password
         </Button>

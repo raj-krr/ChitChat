@@ -10,7 +10,7 @@ export default function VerifyEmail() {
   const email: string = searchParams.get("email") ?? "";
 
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const [otpError, setOtpError] = useState<string>("");
 
@@ -18,14 +18,14 @@ export default function VerifyEmail() {
   const [loading, setLoading] = useState<boolean>(false);
   const [resendLoading, setResendLoading] = useState<boolean>(false);
 
-  // Countdown Timer
+  // --------------- TIMER ---------------
   useEffect(() => {
     if (timer === 0) return;
     const interval = setInterval(() => setTimer((t) => t - 1), 1000);
     return () => clearInterval(interval);
   }, [timer]);
 
-  // Handle OTP Changes
+  // --------------- OTP CHANGE ---------------
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
 
@@ -33,9 +33,7 @@ export default function VerifyEmail() {
     newOtp[index] = value.slice(-1);
     setOtpDigits(newOtp);
 
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
   const handleBackspace = (index: number, value: string) => {
@@ -47,19 +45,20 @@ export default function VerifyEmail() {
     }
   };
 
+  // --------------- PASTE OTP ---------------
   const handlePasteOtp = (e: React.ClipboardEvent<HTMLDivElement>) => {
-  e.preventDefault();
-  const paste = e.clipboardData.getData("text").trim();
+    e.preventDefault();
+    const paste = e.clipboardData.getData("text").trim();
 
-  if (!/^\d{6}$/.test(paste)) return;
+    if (!/^\d{6}$/.test(paste)) return;
 
-  const newOtp = paste.split("");
-  setOtpDigits(newOtp);
+    const newOtp = paste.split("");
+    setOtpDigits(newOtp);
 
-  // Focus last box
-  inputRefs.current[5]?.focus();
-};
+    inputRefs.current[5]?.focus();
+  };
 
+  // --------------- VERIFY ---------------
   const handleVerify = async () => {
     setOtpError("");
 
@@ -71,7 +70,11 @@ export default function VerifyEmail() {
 
     try {
       setLoading(true);
-      await verifyEmailApi({ email, verificationCode: otpString });
+      await verifyEmailApi({
+        email,
+        verificationCode: otpString,
+      });
+
       navigate("/login");
     } catch (err: any) {
       const msg = err.response?.data?.msg || "Invalid OTP";
@@ -81,6 +84,7 @@ export default function VerifyEmail() {
     }
   };
 
+  // --------------- RESEND OTP ---------------
   const handleResend = async () => {
     setOtpError("");
 
@@ -97,21 +101,21 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 chitchat-bg p-6 relative overflow-hidden">
 
-      {/* Background grid */}
+      {/* Grid BG */}
       <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
 
-      {/* GLASS CARD */}
+      {/* Card */}
       <div
         className="
           w-full max-w-lg rounded-3xl p-8
           backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl
-          relative z-10
-          flex flex-col items-center gap-6
+          fade-in glow-hover tilt-hover
+          relative z-10 flex flex-col items-center gap-6
         "
       >
-        {/* TITLE */}
+        {/* Title */}
         <div className="text-center">
           <h1
             className="
@@ -122,56 +126,52 @@ export default function VerifyEmail() {
             Verify Email 🔐
           </h1>
 
-          <Text className="text-gray-900 mt-4">
+          <Text className="text-gray-900 mt-4 text-sm sm:text-base">
             An OTP has been sent to <span className="font-semibold">{email}</span>
           </Text>
         </div>
 
-       {/* OTP Section */}
-<div className="w-full flex flex-col items-center gap-5 mt-4">
+        {/* OTP Section */}
+        <div className="w-full flex flex-col items-center gap-5 mt-4">
+          <label className="text-sm font-semibold text-gray-900">Enter OTP</label>
 
-  {/* Enter OTP label */}
-  <label className="text-sm font-semibold text-gray-900">
-    Enter OTP
-  </label>
+          {/* OTP Boxes */}
+          <div
+            className="flex gap-2 sm:gap-3 justify-center"
+            onPaste={handlePasteOtp}
+          >
+            {otpDigits.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                className="
+                  w-10 h-12 sm:w-14 sm:h-16
+                  text-center text-xl sm:text-2xl font-semibold
+                  rounded-xl bg-white/40 backdrop-blur border border-white/60 
+                  focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500
+                  transition-all
+                "
+                onChange={(e) => handleOtpChange(i, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Backspace") handleBackspace(i, digit);
+                }}
+              />
+            ))}
+          </div>
 
-  {/* OTP Boxes */}
-  <div className="flex gap-3 justify-center"
-       onPaste={(e) => handlePasteOtp(e)}>
-    {otpDigits.map((digit, i) => (
-      <input
-        key={i}
-        ref={(el) => {
-          inputRefs.current[i] = el;
-        }}
-        type="text"
-        inputMode="numeric"
-        maxLength={1}
-        value={digit}
-        className="
-          w-12 h-14 sm:w-14 sm:h-16
-          text-center text-2xl font-semibold
-          rounded-xl bg-white/40 backdrop-blur border border-white/60 
-          focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500
-          transition-all
-        "
-        onChange={(e) => handleOtpChange(i, e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Backspace') handleBackspace(i, digit);
-        }}
-      />
-    ))}
-  </div>
+          {/* Error */}
+          <div className="min-h-[20px]">
+            {otpError && <span className="text-red-600 text-sm">{otpError}</span>}
+          </div>
+        </div>
 
-  {/* Error slot */}
-  <div className="min-h-[20px]">
-    {otpError && <span className="text-red-600 text-sm">{otpError}</span>}
-  </div>
-
-</div>
-
-
-        {/* VERIFY BUTTON */}
+        {/* Verify Button */}
         <Button
           size="lg"
           radius="lg"
@@ -185,7 +185,7 @@ export default function VerifyEmail() {
           Verify Email
         </Button>
 
-        {/* RESEND BUTTON */}
+        {/* Resend */}
         {timer > 0 ? (
           <Button size="md" radius="lg" variant="outline" fullWidth disabled>
             Resend OTP in {timer}s
@@ -203,7 +203,7 @@ export default function VerifyEmail() {
           </Button>
         )}
 
-        {/* LOGIN LINK */}
+        {/* Back to Login */}
         <Text className="text-center text-sm text-gray-800">
           Back to{" "}
           <button
