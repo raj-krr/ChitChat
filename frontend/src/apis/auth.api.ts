@@ -13,12 +13,12 @@ export const registerApi = (data: {
 };
 
 
-export const verifyEmailApi = (data: { email:string; otp: string }) => {
-  return axiosInstance.post("auth/verify-email", data);
+export const verifyEmailApi = (data: { email:string; verificationCode: string }) => {
+  return axiosInstance.post("auth/verifyemail", data);
 };
 
-export const resendVerificationOtpApi = (email: string) => {
-  return axiosInstance.post("auth/resendverificationcode", { email });
+export const resendVerificationOtpApi = (data:{ email: string }) => {
+  return axiosInstance.post("auth/resendverificationcode", data);
 };
 
 export const checkAuthApi = () => {
@@ -26,13 +26,13 @@ export const checkAuthApi = () => {
 };
 
 
-export const forgotPasswordApi = (identifier: string) => {
-  return axiosInstance.post("auth/forgotpassword", { identifier });
+export const forgotPasswordApi = (data:{identifier: string}) => {
+  return axiosInstance.post("auth/forgotpassword", data);
 };
 
 export const resetPasswordApi = (data: {
   identifier: string;
-  otp: string;
+  resetPasswordOtp: string;
   newPassword: string;
 }) => {
   return axiosInstance.post("auth/updatepassword", data);

@@ -1,4 +1,4 @@
-import { Button, Text,} from "@mantine/core";
+import { Button, Text } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
@@ -10,23 +10,29 @@ export default function HomePage() {
       {/* Background animated grid */}
       <div className="absolute inset-0 bg-grid opacity-20 sm:opacity-25 pointer-events-none"></div>
 
-      {/* CENTER GLASS CONTAINER */}
+      {/* Glass Container */}
       <div
         className="
-          w-full max-w-md sm:max-w-lg rounded-2xl sm:rounded-3xl 
-          p-5 sm:p-8 
-          backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl
+          w-full max-w-md sm:max-w-lg 
+          rounded-2xl sm:rounded-3xl 
+          p-8 sm:p-8 
+          pt-10 pb-10              /* MORE vertical padding on mobile */
+          backdrop-blur-2xl 
+          bg-white/30 border border-white/40 
+          shadow-xl
           fade-in glow-hover tilt-hover
           relative z-10
+
+          min-h-[55vh] sm:min-h-0   /* taller card on mobile */
+          flex flex-col justify-center /* center content vertically */
         "
       >
-        {/* CONTENT */}
         <div className="text-center text-gray-1000">
 
-          {/* App Name */}
+          {/* Title */}
           <h1
             className="
-              mb-3 sm:mb-4
+              mb-4 sm:mb-4
               text-4xl sm:text-6xl font-extrabold text-indigo-900
               drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]
             "
@@ -34,30 +40,55 @@ export default function HomePage() {
             ChitChat 💬
           </h1>
 
+          {/* MOBILE SHORT TEXT */}
           <Text
             size="lg"
             className="
-              mb-2 sm:mb-3
-              text-lg sm:text-xl font-semibold text-gray-1000
+              mb-2 text-lg font-semibold text-gray-1000 
+              sm:hidden
+            "
+          >
+            Connect instantly with people.
+          </Text>
+
+          {/* DESKTOP LONG TEXT */}
+          <Text
+            size="lg"
+            className="
+              mb-2 sm:mb-3 text-lg sm:text-xl font-semibold text-gray-1000 
+              hidden sm:block
             "
           >
             Say more with <span className="text-indigo-900">ChitChat</span>.
           </Text>
 
+          {/* MOBILE SMALL DESCRIPTION */}
+          <Text
+            size="sm"
+            className="
+              mb-8 max-w-xs mx-auto text-gray-1000 leading-relaxed 
+              sm:hidden opacity-90
+            "
+          >
+            Fast, modern & beautiful.
+          </Text>
+
+          {/* DESKTOP FULL DESCRIPTION */}
           <Text
             size="md"
             className="
-              mb-8 sm:mb-10 
+              mb-10 
               max-w-sm sm:max-w-md mx-auto 
               text-gray-1000 opacity-100 leading-relaxed
-              text-sm sm:text-base
+              text-sm sm:text-base 
+              hidden sm:block
             "
           >
             A fast, modern messaging experience designed for people who want to
             connect instantly, seamlessly, and beautifully.
           </Text>
 
-          {/* BUTTON GROUP — fully responsive */}
+          {/* BUTTON GROUP */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
             <Button
               size="md"
@@ -92,6 +123,7 @@ export default function HomePage() {
               Create Account
             </Button>
           </div>
+
         </div>
       </div>
     </div>

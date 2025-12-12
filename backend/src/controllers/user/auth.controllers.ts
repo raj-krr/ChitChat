@@ -89,8 +89,8 @@ export const resendVerificationCode= async (req: Request, res: Response) => {
         if (!user) {
             return res.status(400).json({ success: false, msg: "User not found" })
         };
-        if (user.isVerified = true) {
-            return res.status(200).json({ success: false, msg: "User already verified" })
+        if (user.isVerified === true) {
+            return res.status(400).json({ success: false, msg: "User already verified" })
         };
         const code = generateCode(6);
         user.verificationCode = code;
@@ -108,30 +108,47 @@ export const resendVerificationCode= async (req: Request, res: Response) => {
 }
 
 export const verifyEmail = async (req: Request, res: Response) => {
-    const { verificationCode, email } = req.body;
-    if (!verificationCode ) {
-        return res.status(400).json({ success: false, msg: "verification code is required" });   
+  const { verificationCode, email } = req.body;
+
+  if (!verificationCode) {
+    return res.status(400).json({ success: false, msg: "verification code is required" });
+  }
+
+  try {
+    const user = await UserMOdel.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ success: false, msg: "User not found" });
     }
-    try {
-        const user = await UserMOdel.findOne({ email, verificationCode });
-        if (!user) {
-            return res.status(400).json({ success: false, msg: "invalid or expired verification code" });
-        }
-   
-        user.isVerified = true;
-        user.verificationCode = undefined;
-        user.verificationCodeExpires = undefined;
-        user.updatedAt = new Date();
-        await user.save();
 
-
-        welcomeEmail(user.email, user.username).catch(err => console.error("failed to send welcome email", error));
-        return res.status(200).json({ success: true, msg: "Email verified successfully" });
-
-    } catch (error) {
-        return res.status(500).json({ success: false, msg: "Internal server error" });
+    if (user.verificationCode !== verificationCode) {
+      return res.status(400).json({ success: false, msg: "invalid verification code" });
     }
-}
+
+    if (user.verificationCodeExpires && user.verificationCodeExpires < new Date()) {
+      return res.status(400).json({ success: false, msg: "verification code expired" });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+    user.updatedAt = new Date();
+    await user.save();
+
+    welcomeEmail(user.email, user.username).catch((err) =>
+      console.error("failed to send welcome email", err)
+    );
+
+    return res.status(200).json({
+      success: true,
+      msg: "Email verified successfully",
+    });
+
+  } catch (error: any) {
+    return res.status(500).json({ success: false, msg: "Internal server error" });
+  }
+};
+
 
 export const login = async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
@@ -189,29 +206,44 @@ export const forgetPassword = async (req: Request, res: Response) => {
 };
 
 export const updatePassword = async (req: Request, res: Response) => {
-    const { identifier, newPassword } = req.body;
-    if (!identifier || !newPassword) {
-        return res.status(400).json({ success: false, msg: "email or username and new password is required" });
-    };
+  const { resetPasswordOtp, identifier, newPassword } = req.body;
 
-    const user = await UserMOdel.findOneAndUpdate({ $or:[{email:identifier},{username:identifier}] });
+  if (!identifier || !newPassword || !resetPasswordOtp) {
+    return res.status(400).json({ success: false, msg: "All fields are required" });
+  }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+  const user = await UserMOdel.findOne({
+    $or: [{ email: identifier }, { username: identifier }]
+  });
 
-    if (!user) {
-        return res.status(400).json({ success: false, msg: "User not found" });
-    } else {
-        user.password = hashedPassword;
-        user.updatedAt = new Date();
-    };
-    try {
-        await user.save();
-        return res.status(200).json({ success: true, msg: "Password updated successfully" });
-    } catch (error) {
-        return res.status(400).json({ success: false, msg: "Internal server error" });
-    };
+  if (!user) {
+    return res.status(400).json({ success: false, msg: "User not found" });
+  }
+
+  if (user.resetPasswordOtp !== resetPasswordOtp) {
+    return res.status(400).json({ success: false, msg: "Invalid OTP" });
+  }
+
+  if (user.resetPasswordOtpexpires && user.resetPasswordOtpexpires < new Date()) {
+    return res.status(400).json({ success: false, msg: "OTP expired" });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  user.password = hashedPassword;
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordOtpexpires = undefined;
+  user.updatedAt = new Date();
+
+  try {
+    await user.save();
+    return res.status(200).json({ success: true, msg: "Password updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, msg: "Internal server error" });
+  }
 };
+
 export const logout = async (req: Request, res: Response) => {
     
     try {
