@@ -98,6 +98,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       msg: "Internal server error",
+      error,
     });
   }
 };
@@ -128,23 +129,20 @@ export const getMyFriends = async (req: Request, res: Response) => {
 };
 
 export const sendFriendRequest = async (req: Request, res: Response) => {
-  const { identifier } = req.body;
-  const fromUserId = req.user?.userId as string;
+  const { userId } = req.body;
+  const fromUserId = req.user!.userId;
 
-  if (!identifier) {
-    return res.status(400).json({ msg: "Username or email is required" });
+  if (!userId) {
+    return res.status(400).json({ msg: "UserId is required" });
   }
 
-  const toUser = await User.findOne({
-    $or: [{ username: identifier }, { email: identifier }],
-  });
+  if (userId === fromUserId) {
+    return res.status(400).json({ msg: "You cannot add yourself" });
+  }
 
+  const toUser = await User.findById(userId);
   if (!toUser) {
     return res.status(404).json({ msg: "User not found" });
-  }
-
-  if (toUser._id.equals(fromUserId)) {
-    return res.status(400).json({ msg: "You cannot add yourself" });
   }
 
   const fromUser = await User.findById(fromUserId);
@@ -174,6 +172,7 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
     requestId: request._id,
   });
 };
+
 
 export const acceptFriendRequest = async (req: Request, res: Response) => {
   const { requestId } = req.params;
