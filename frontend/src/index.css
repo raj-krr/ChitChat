@@ -6,6 +6,23 @@
 .chitchat-bg {
   @apply bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500;
 }
+
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(-30%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.2s ease-in-out infinite;
+}
+
 /* Mobile gradient softening fix */
 @media (max-width: 640px) {
   .chitchat-bg {

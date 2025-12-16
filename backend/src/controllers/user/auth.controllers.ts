@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import { error } from "console";
 import { generateAccessToken, generateToken } from "../../utils/generateToken";
-import { logoutOptions, options } from "../../utils/cookie";
+import { AccessOptions, logoutOptions, RefreshOptions } from "../../utils/cookie";
 import  jwt from "jsonwebtoken";
 
  export const register = async (req: Request, res: Response) => {
@@ -172,7 +172,7 @@ export const login = async (req: Request, res: Response) => {
         user.refreshToken = refreshToken;
         await user.save();
         
-      return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json({ success: true, msg: "login successfull" });
+      return res.status(200).cookie("accessToken", accessToken, AccessOptions).cookie("refreshToken", refreshToken, RefreshOptions).json({ success: true, msg: "login successfull" });
     
     } catch (error) {
         return res.status(400).json({ success: true, msg: "server error" })
@@ -299,13 +299,19 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 
     const newAccessToken = generateAccessToken(user._id, user.email);
 
-    res.cookie("accessToken", newAccessToken, options);
+    res.cookie("accessToken", newAccessToken, AccessOptions);
 
-    return res.status(200).json({
-      success: true,
-      accessToken: newAccessToken, 
-      user,
-    });
+    const safeUser = {
+  _id: user._id,
+  username: user.username,
+  email: user.email,
+  avatar: user.avatar,
+};
+
+return res.status(200).json({
+  success: true,
+  user: safeUser,
+});
   } catch {
     return res.status(401).json({ success: false });
   }
