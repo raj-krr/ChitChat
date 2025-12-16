@@ -65,6 +65,7 @@ export default function MessageInput({ chatId, onLocalSend }: any) {
         border-t border-white/20
         px-4 py-3
         flex gap-3 items-center
+        pb-safe
       "
     >
       {/* FILE UPLOAD */}

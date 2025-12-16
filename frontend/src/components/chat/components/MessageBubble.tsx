@@ -31,6 +31,8 @@ const [showActions, setShowActions] = useState(false);
   onContextMenu={handleContextMenu}
   className={`
     max-w-[75%] px-4 py-2 rounded-2xl text-sm
+    leading-relaxed
+    whitespace-pre-wrap break-words
     ${isMe
       ? "bg-indigo-600 text-white rounded-br-sm"
       : "bg-white/20 text-white rounded-bl-sm"}

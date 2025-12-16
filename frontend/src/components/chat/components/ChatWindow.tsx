@@ -132,7 +132,7 @@ if (atBottom) {
             shouldAutoScrollRef.current = true;
           }}
           className="
-            absolute bottom-28 md:bottom-24
+           absolute bottom-[96px] md:bottom-[88px]
             left-1/2 -translate-x-1/2
             px-4 py-2 rounded-full
             bg-indigo-600 text-white shadow-lg

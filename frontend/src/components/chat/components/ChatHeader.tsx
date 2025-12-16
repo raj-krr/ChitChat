@@ -9,7 +9,7 @@ export default function ChatHeader({ user, onBack }: any) {
   return (
     <div
       className="
-        sticky top-0 z-20
+         z-20
         flex items-center gap-3
         px-4 py-3
         bg-white/10 backdrop-blur-xl
@@ -30,9 +30,9 @@ export default function ChatHeader({ user, onBack }: any) {
           src={user.avatar || "/avatar-placeholder.png"}
           className="w-10 h-10 rounded-full object-cover"
         />
-        {isOnline && (
-          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-black rounded-full" />
-        )}
+       {isOnline && (
+          <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 animate-pulse rounded-full" />
+          )}
       </div>
 
       {/* NAME + STATUS */}
