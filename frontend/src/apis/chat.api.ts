@@ -11,10 +11,19 @@ export const getMessagesApi = (
     params,
   });
 
-export const sendMessageApi = (id: string, data: FormData) =>
-  axiosInstance.post(`/message/send/${id}`, data, {
-    headers: { "Content-Type": "multipart/form-data" },
+export const sendMessageApi = (
+  chatId: string,
+  form: FormData,
+  onProgress?: (p: number) => void
+) => {
+  return axiosInstance.post(`/message/send/${chatId}`, form, {
+    onUploadProgress: (e) => {
+      if (!e.total) return;
+      const percent = Math.round((e.loaded * 100) / e.total);
+      onProgress?.(percent);
+    },
   });
+};
 
 
 export const markReadApi = (id: string) =>

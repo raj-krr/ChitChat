@@ -38,23 +38,23 @@ export function useChatSocket({
           message.receiverId === userId);
 
       if (!isCurrentChat) return;
-      setMessages((prev: any[]) => {
-  
+    setMessages((prev: any[]) => {
   const tempIndex = prev.findIndex(
-    m =>
-      m.isTemp &&
-      m.senderId === userId &&
-      m.receiverId === chatId
+    m => m.clientId && m.senderId === userId
   );
 
   if (tempIndex !== -1) {
     const updated = [...prev];
-    updated[tempIndex] = message; 
+    updated[tempIndex] = {
+      ...message,
+      clientId: prev[tempIndex].clientId, // preserve key
+    };
     return updated;
   }
 
   return [...prev, message];
 });
+
 
 
       // ✅ SCROLL LOGIC

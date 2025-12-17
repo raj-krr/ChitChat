@@ -10,7 +10,6 @@ import { onlineUsers } from "../../socket";
 import { getIO } from "../../socketEmitter";
 import mongoose from "mongoose";
 
-
 export const getMyFriends = async (req: Request, res: Response) => {
   try {
     const myId = req.user?.userId;
@@ -21,16 +20,18 @@ export const getMyFriends = async (req: Request, res: Response) => {
     }
 
     const friends = await UserMOdel.find({
-      _id: { $in: me.friends }
+      _id: { $in: me.friends },
     }).select("-password -refreshToken");
 
     return res.status(200).json({
       success: true,
       msg: "Fetched friends",
-      users: friends
+      users: friends,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, msg: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, msg: "Internal server error" });
   }
 };
 
@@ -42,10 +43,7 @@ export const getChatList = async (req: Request, res: Response) => {
       // 1️⃣ Only messages involving me
       {
         $match: {
-          $or: [
-            { senderId: myId },
-            { receiverId: myId },
-          ],
+          $or: [{ senderId: myId }, { receiverId: myId }],
         },
       },
 
@@ -53,11 +51,7 @@ export const getChatList = async (req: Request, res: Response) => {
       {
         $addFields: {
           otherUser: {
-            $cond: [
-              { $eq: ["$senderId", myId] },
-              "$receiverId",
-              "$senderId",
-            ],
+            $cond: [{ $eq: ["$senderId", myId] }, "$receiverId", "$senderId"],
           },
         },
       },
@@ -106,9 +100,7 @@ export const getChatList = async (req: Request, res: Response) => {
       _id: { $in: userIds },
     }).select("username avatar");
 
-    const userMap = new Map(
-      users.map((u) => [u._id.toString(), u])
-    );
+    const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
     // 7️⃣ Build final response
     const chatList = chats.map((chat) => {
@@ -152,14 +144,14 @@ export const getMessages = async (req: Request, res: Response) => {
         { senderId: receiver._id, receiverId: sender._id },
       ],
     })
-      .sort({ createdAt: -1 }) 
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("senderId", "username avatar");
 
     return res.status(200).json({
       success: true,
-      messages: messages.reverse(), 
+      messages: messages.reverse(),
     });
   } catch {
     return res.status(500).json({ success: false });
@@ -169,6 +161,7 @@ export const getMessages = async (req: Request, res: Response) => {
 export const sendMessages = async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
+    const { clientId } = req.body;
     const { sender, receiver } = req.chatUsers!;
 
     const allowedMimesTypes = [
@@ -176,6 +169,7 @@ export const sendMessages = async (req: Request, res: Response) => {
       "image/png",
       "image/webp",
       "image/gif",
+      "image/svg+xml",
       "video/mp4",
       "video/mpeg",
       "video/quicktime",
@@ -198,8 +192,11 @@ export const sendMessages = async (req: Request, res: Response) => {
         });
       }
 
+      const senderIdStr = sender._id.toString();
+      const receiverIdStr = receiver._id.toString();
+
       const fileExt = path.extname(req.file.originalname);
-      const fileKey = `user-messages/${sender}/${receiver}-${Date.now()}${fileExt}`;
+      const fileKey = `${senderIdStr}/${receiverIdStr}-${Date.now()}${fileExt}`;
       const fileContent = fs.readFileSync(req.file.path);
 
       await s3.send(
@@ -216,7 +213,6 @@ export const sendMessages = async (req: Request, res: Response) => {
       fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
     }
 
-
     if (!text && !fileUrl) {
       return res.status(400).json({
         success: false,
@@ -230,7 +226,7 @@ export const sendMessages = async (req: Request, res: Response) => {
       text,
       file: fileUrl,
     });
-      const receiverIdStr = receiver._id.toString();
+    const receiverIdStr = receiver._id.toString();
     const senderIdStr = sender._id.toString();
 
     const receiverSocketId = onlineUsers.get(receiverIdStr);
@@ -238,37 +234,34 @@ export const sendMessages = async (req: Request, res: Response) => {
 
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("new-message", {
-        message,
+        message: { ...message.toObject(), clientId },
       });
 
-     const senderSocketId = onlineUsers.get(senderIdStr);
-if (senderSocketId) {
-  io.to(senderSocketId).emit("new-message", { message });
-      }
-      
       io.to(receiverSocketId).emit("unread-update", {
         from: senderIdStr,
       });
     }
-     await message.save();
+    await message.save();
     return res.status(200).json({
       success: true,
-      msg: "Message sent successfully",
-      message,
+      message: {
+        ...message.toObject(),
+        clientId,
+      },
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       msg: "Internal server error",
+      error: error,
     });
   }
 };
 
-
-export const markMessagesAsRead = async (req:Request, res:Response) => {
+export const markMessagesAsRead = async (req: Request, res: Response) => {
   const myId = req.user?.userId;
   const friendId = req.params.id;
-     
+
   await MessageModal.updateMany(
     {
       senderId: friendId,
@@ -279,7 +272,7 @@ export const markMessagesAsRead = async (req:Request, res:Response) => {
   );
 
   const io = getIO();
-  
+
   const friendSocket = onlineUsers.get(friendId);
   if (friendSocket) {
     io.to(friendSocket).emit("messages-read", {
@@ -289,8 +282,6 @@ export const markMessagesAsRead = async (req:Request, res:Response) => {
 
   return res.json({ success: true });
 };
-
-
 
 export const clearChat = async (req: Request, res: Response) => {
   const myId = req.user!.userId;
@@ -314,18 +305,16 @@ export const clearChat = async (req: Request, res: Response) => {
   });
 };
 
-
-
-export const deleteMessageForEveryone = async (req:Request, res:Response) => {
+export const deleteMessageForEveryone = async (req: Request, res: Response) => {
   try {
     const { messageId } = req.params;
     const userId = req.user?.userId.toString();
 
-     if (!mongoose.Types.ObjectId.isValid(messageId)) {
-  return res.status(400).json({
-    msg: "Invalid message id",
-  });
-}
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({
+        msg: "Invalid message id",
+      });
+    }
     const message = await MessageModal.findById(messageId);
     if (!message) {
       return res.status(404).json({ msg: "Message not found" });
@@ -342,9 +331,7 @@ export const deleteMessageForEveryone = async (req:Request, res:Response) => {
 
     const io = getIO();
 
-    const receiverSocketId = onlineUsers.get(
-      message.receiverId.toString()
-    );
+    const receiverSocketId = onlineUsers.get(message.receiverId.toString());
     const senderSocketId = onlineUsers.get(userId);
 
     if (receiverSocketId) {
@@ -360,12 +347,12 @@ export const deleteMessageForEveryone = async (req:Request, res:Response) => {
     }
 
     res.json({ success: true });
-  } catch(error) {
-    res.status(500).json({ msg: "Server error",error });
+  } catch (error) {
+    res.status(500).json({ msg: "Server error", error });
   }
 };
 
-export const deleteMessageForMe = async (req:Request, res:Response) => {
+export const deleteMessageForMe = async (req: Request, res: Response) => {
   try {
     const { messageId } = req.params;
     const myId = req.user!.userId;

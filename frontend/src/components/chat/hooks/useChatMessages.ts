@@ -7,9 +7,11 @@ const mergeUniqueMessages = (oldMsgs: any[], newMsgs: any[]) => {
   const map = new Map<string, any>();
 
   [...oldMsgs, ...newMsgs].forEach((msg) => {
-    if (msg?._id) {
-      map.set(msg._id.toString(), msg);
-    }
+  const key = msg._id || msg.clientId;
+if (key) {
+  map.set(key.toString(), msg);
+}
+
   });
 
   return Array.from(map.values()).sort(

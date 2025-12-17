@@ -7,6 +7,12 @@ import { useEffect } from "react";
 import { useChatMessages } from "../hooks/useChatMessages";
 import { useChatSocket } from "../hooks/useChatSocket";
 
+const safeDate = (date?: string) => {
+  if (!date) return null;
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 const formatDateLabel = (date: string) => {
   const d = new Date(date);
   const today = new Date();
@@ -81,9 +87,21 @@ if (atBottom) {
       await loadMessages();
     }
   };
-      const visibleMessages = messages.filter(
-  m => !m.deletedFor?.includes(user._id)
-);
+const normalizedMessages = messages.map((m, index) => ({
+  ...m,
+  __key:
+    m._id ??
+    m.clientId ??
+    `${m.senderId}-${m.createdAt}-${index}`,
+}));
+
+  
+  const visibleMessages = normalizedMessages.filter(m => {
+  if (!m._id) return true;
+
+  return !m.deletedFor?.includes(user._id);
+});
+
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
@@ -96,21 +114,25 @@ if (atBottom) {
       >
     {visibleMessages.map((m, i) => {
   const prev = visibleMessages[i - 1];
-  const showDate =
-    !prev ||
-    new Date(prev.createdAt).toDateString() !==
-      new Date(m.createdAt).toDateString();
+      const currDate = safeDate(m.createdAt); 
+      const prevDate = safeDate(prev?.createdAt);
+      
+const showDate =
+  currDate &&
+  (!prevDate ||
+    currDate.toDateString() !== prevDate.toDateString());
 
   const showAvatar =
     !prev || prev.senderId !== m.senderId;
 
   return (
-    <div key={m._id}>
-      {showDate && (
-        <div className="text-center my-3 text-xs text-white/60">
-          {formatDateLabel(m.createdAt)}
-        </div>
-      )}
+    <div key={m.__key}>
+      {showDate && currDate && (
+  <div className="text-center my-3 text-xs text-white/60">
+    {formatDateLabel(currDate.toISOString())}
+  </div>
+)}
+
       <MessageBubble
         msg={m}
         chatUser={chat}
@@ -149,11 +171,11 @@ if (atBottom) {
       )}
 <div className="shrink-0 border-t border-white/10 bg-white/10 backdrop-blur-xl">
   <MessageInput
-    chatId={chat._id}
-    onLocalSend={(msg: any) =>
-      setMessages(prev => [...prev, msg])
-    }
-  />
+  chatId={chat._id}
+  onLocalSend={setMessages}
+/>
+
+
 </div>
 
     </div>
