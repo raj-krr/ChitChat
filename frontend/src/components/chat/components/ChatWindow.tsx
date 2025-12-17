@@ -2,6 +2,7 @@ import ChatHeader from "./ChatHeader";
 import MessageBubble from "../components/MessageBubble";
 import MessageInput from "../components/MessageInput";
 import { useAuth } from "../../../context/AuthContext";
+import { useEffect } from "react";
 
 import { useChatMessages } from "../hooks/useChatMessages";
 import { useChatSocket } from "../hooks/useChatSocket";
@@ -46,6 +47,12 @@ export default function ChatWindow({ chat, onBack }: any) {
     endRef,
   });
 
+    useEffect(() => {
+  if (shouldAutoScrollRef.current) {
+    endRef.current?.scrollIntoView({ behavior: "auto" });
+  }
+    }, [messages]);
+  
   const handleScroll = async () => {
     const el = containerRef.current;
     if (!el) return;
@@ -70,7 +77,6 @@ if (atBottom) {
   }
 }
 
-
     if (el.scrollTop < 50 && hasMore && !loadingMore) {
       await loadMessages();
     }
@@ -80,13 +86,13 @@ if (atBottom) {
 );
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full min-h-0 relative">
       <ChatHeader user={chat} onBack={onBack} />
 
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 "
+        className="flex-1 overflow-y-auto px-4 py-3  "
       >
     {visibleMessages.map((m, i) => {
   const prev = visibleMessages[i - 1];
@@ -141,13 +147,15 @@ if (atBottom) {
           New messages ↓
         </button>
       )}
+<div className="shrink-0 border-t border-white/10 bg-white/10 backdrop-blur-xl">
+  <MessageInput
+    chatId={chat._id}
+    onLocalSend={(msg: any) =>
+      setMessages(prev => [...prev, msg])
+    }
+  />
+</div>
 
-      <MessageInput
-        chatId={chat._id}
-        onLocalSend={(msg: any) =>
-          setMessages(prev => [...prev, msg])
-        }
-      />
     </div>
   );
 }

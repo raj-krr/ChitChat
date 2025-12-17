@@ -24,6 +24,7 @@ const [showFriendsPicker, setShowFriendsPicker] = useState(false);
     max-w-7xl mx-auto
     h-[calc(100vh-7rem)]
     overflow-hidden
+    md:overflow-hidden
 
     md:rounded-3xl
     md:bg-white/10
@@ -37,14 +38,14 @@ const [showFriendsPicker, setShowFriendsPicker] = useState(false);
           <div className="h-full grid grid-cols-1 md:grid-cols-[320px_1fr]">
 
             {/* SIDEBAR */}
-            <div className={`${isMobileChatOpen ? "hidden md:block" : "block"}`}>
+           <div className="block">
               <Sidebar onSelectChat={setSelectedChat}
                showFriendsPicker={showFriendsPicker}
                setShowFriendsPicker={setShowFriendsPicker}  />
             </div>
 
             {/* CHAT AREA (DESKTOP) */}
-            <div className="hidden md:flex flex-col h-full">
+            <div className="hidden md:flex flex-col  min-h-0">
               {selectedChat ? (
                 <ChatWindow
                   chat={selectedChat}
