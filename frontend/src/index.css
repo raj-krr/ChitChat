@@ -26,6 +26,16 @@
     transform: translateX(100%);
   }
 }
+@keyframes navIn {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
 
 .animate-loading-bar {
   animation: loading-bar 1.2s ease-in-out infinite;

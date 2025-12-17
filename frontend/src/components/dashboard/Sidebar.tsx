@@ -1,5 +1,4 @@
 import { TextInput } from "@mantine/core";
-import { useState } from "react";
 
 import ChatListItem from "./ChatListItem";
 import SearchResults from "./SearchResults";
@@ -9,7 +8,17 @@ import FriendsPicker from "./FriendsPicker";
 
 import { useSidebar } from "./useSidebar";
 
-export default function Sidebar({ onSelectChat }: any) {
+type SidebarProps = {
+  onSelectChat: (user: any) => void;
+  showFriendsPicker: boolean;
+  setShowFriendsPicker: React.Dispatch<React.SetStateAction<boolean>>;
+};
+export default function Sidebar({
+  onSelectChat,
+  showFriendsPicker,
+  setShowFriendsPicker,
+}: SidebarProps) {
+
   const {
     chats,
     setChats,
@@ -22,31 +31,48 @@ export default function Sidebar({ onSelectChat }: any) {
     loadChats,
   } = useSidebar();
 
-  const [showFriendsPicker, setShowFriendsPicker] = useState(false);
 
 
   return (
-    <div
-      className="
-        relative h-full flex flex-col
-        text-white  bg-white/5
-        border-r border-white/10 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)]
-        after:content-[''] after:absolute after:bottom-0
-after:h-6 after:w-full
-after:bg-gradient-to-t after:from-black/40 after:to-transparent
+<div
+  className="
+    relative h-full flex flex-col text-white
 
-      "
-    >
-      {/* 🔍 SEARCH */}
-      <div className="sticky top-0 z-10 bg-white/10 backdrop-blur-xl p-3">
+    md:bg-white/5
+    md:border-r md:border-white/10
+    md:shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)]
+
+    
+  "
+>
+
+      {/*  SEARCH */}
+      <div
+  className="
+    sticky top-0 z-20 p-3 space-y-2
+
+    bg-white/20 backdrop-blur-xl
+    border-b border-white/20
+
+    md:bg-transparent md:backdrop-blur-0 md:border-0
+  "
+      >
+         {/* BRANDING (MOBILE ONLY) */}
+  <h1 className="md:hidden text-2xl font-bold text-white tracking-wide">
+    ChitChat
+  </h1>
         <TextInput
-          placeholder="Search users"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          radius="md"
+  placeholder="Search users"
+  value={query}
+  onChange={e => setQuery(e.target.value)}
+  radius="xl"
+  classNames={{
+    input:
+      "bg-white/90 text-black rounded-full px-4 py-3 focus:ring-2 focus:ring-indigo-400",
+  }}
         />
-
-        <div className="flex gap-2 mt-3">
+        
+        <div className="flex gap-3 mt-5">
           <button
             onClick={() => {
               setMode("chats");
@@ -77,7 +103,7 @@ after:bg-gradient-to-t after:from-black/40 after:to-transparent
         </div>
       </div>
 
-      {/* 📃 LIST */}
+      {/*  LIST */}
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
         {mode === "requests" && (
           <FriendRequests onAccepted={loadChats} />
@@ -111,10 +137,11 @@ after:bg-gradient-to-t after:from-black/40 after:to-transparent
           ))}
       </div>
 
-      {/* ➕ NEW CHAT */}
-      <div className="absolute bottom-4 right-4">
-        <FriendsBubble onOpen={() => setShowFriendsPicker(true)} />
-      </div>
+      {/*  NEW CHAT */}
+    <div className="hidden md:block absolute bottom-4 right-4">
+  <FriendsBubble onOpen={() => setShowFriendsPicker(true)} />
+</div>
+
 
       {showFriendsPicker && (
         <FriendsPicker

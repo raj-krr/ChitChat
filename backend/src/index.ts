@@ -21,8 +21,8 @@ const io = new Server(server, {
   },
 });
 
-setIO(io);       // 🔥 make io globally available
-initSocket(io);  // 🔥 init socket logic
+setIO(io);       
+initSocket(io);  
 
 server.listen(port, host, () => {
   console.log(`🚀 Server running on http://${host}:${port}`);
