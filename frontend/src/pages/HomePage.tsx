@@ -13,7 +13,7 @@ export default function HomePage() {
         p-4 sm:p-6 relative overflow-hidden
       "
     >
-      {/* Background animated grid */}
+      {/* Background animate grid */}
       <div className="absolute inset-0 bg-grid opacity-20 sm:opacity-25 pointer-events-none"></div>
 
       {/* Glass Container */}
