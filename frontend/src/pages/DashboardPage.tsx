@@ -7,24 +7,49 @@ import MobileBottomNav from "../components/layout/MobileBottomNav";
 
 export default function DashboardPage() {
   const [selectedChat, setSelectedChat] = useState<any>(null);
-const [showFriendsPicker, setShowFriendsPicker] = useState(false);
+  const [showFriendsPicker, setShowFriendsPicker] = useState(false);
 
   const isMobileChatOpen = Boolean(selectedChat);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-      
+    <div
+      className="
+        min-h-screen relative overflow-hidden
+
+        /* 📱 MOBILE – light but anchored gradient */
+        bg-gradient-to-b
+        from-indigo-400 via-purple-400 to-pink-400
+
+        /* 💻 DESKTOP – richer gradient */
+        md:bg-gradient-to-br
+        md:from-indigo-500 md:via-purple-500 md:to-pink-500
+
+        chitchat-bg
+      "
+    >
+      {/* Background grid */}
+      <div
+  className="
+    absolute inset-0 bg-grid
+    pointer-events-none
+    z-0
+    opacity-[0.03] md:opacity-25
+  "
+></div>
+
       {/* DESKTOP NAVBAR ONLY */}
-      <div className="hidden md:block">
+      <div className="hidden md:block fixed top-0 left-0 w-full z-[100]">
         <AppNavbar />
       </div>
-      <div className=" md:pt-24">
+
+      <div className="md:pt-24 relative z-10">
         <div
   className="
     max-w-7xl mx-auto
     h-[calc(100vh-7rem)]
     overflow-hidden
-    md:overflow-hidden
+    relative
+    z-10
 
     md:rounded-3xl
     md:bg-white/10
@@ -36,16 +61,17 @@ const [showFriendsPicker, setShowFriendsPicker] = useState(false);
 
           {/* MAIN GRID */}
           <div className="h-full grid grid-cols-1 md:grid-cols-[320px_1fr]">
-
             {/* SIDEBAR */}
-           <div className="block">
-              <Sidebar onSelectChat={setSelectedChat}
-               showFriendsPicker={showFriendsPicker}
-               setShowFriendsPicker={setShowFriendsPicker}  />
+            <div className="block">
+              <Sidebar
+                onSelectChat={setSelectedChat}
+                showFriendsPicker={showFriendsPicker}
+                setShowFriendsPicker={setShowFriendsPicker}
+              />
             </div>
 
             {/* CHAT AREA (DESKTOP) */}
-            <div className="hidden md:flex flex-col  min-h-0">
+            <div className="hidden md:flex flex-col min-h-0">
               {selectedChat ? (
                 <ChatWindow
                   chat={selectedChat}
@@ -55,7 +81,6 @@ const [showFriendsPicker, setShowFriendsPicker] = useState(false);
                 <EmptyState />
               )}
             </div>
-
           </div>
         </div>
       </div>
@@ -65,7 +90,10 @@ const [showFriendsPicker, setShowFriendsPicker] = useState(false);
         <div
           className="
             md:hidden fixed inset-0 z-[60]
-            bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
+
+            /* same mobile gradient for consistency */
+            bg-gradient-to-b
+            from-indigo-400 via-purple-400 to-pink-500
           "
         >
           <ChatWindow
@@ -75,13 +103,14 @@ const [showFriendsPicker, setShowFriendsPicker] = useState(false);
         </div>
       )}
 
-{!isMobileChatOpen && !showFriendsPicker && (
-  <MobileBottomNav
-    active="home"
-    unreadCount={0}
-    onNewChat={() => setShowFriendsPicker(true)}
-  />
-)}
+      {/* MOBILE BOTTOM NAV */}
+      {!isMobileChatOpen && !showFriendsPicker && (
+        <MobileBottomNav
+          active="home"
+          unreadCount={0}
+          onNewChat={() => setShowFriendsPicker(true)}
+        />
+      )}
     </div>
   );
 }
