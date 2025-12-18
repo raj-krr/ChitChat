@@ -12,9 +12,9 @@ More features and documentation will be added soon.
 - **DevOps:** Docker, GitHub Actions, AWS EC2  
 
 ## 📌 Current Status
-- Authentication (in progress)  
-- Real-time messaging (in progress)  
-- UI/UX development (in progress)  
+- Authentication (completed)  
+- Real-time messaging (completed)  
+- UI/UX development (completed)  
 
 ## 📦 Setup (Basic)
 ```bash
