@@ -1,22 +1,26 @@
-export type Theme = "dark" | "light";
+import { useState } from "react";
+import { getTheme, toggleTheme } from "../utils/theme";
 
-export const getTheme = (): Theme => {
-  const stored = localStorage.getItem("theme") as Theme | null;
-  return stored ?? "dark"; // default = DARK
-};
+export default function ThemeToggle() {
+  const [theme, setThemeState] = useState(getTheme());
 
-export const setTheme = (theme: Theme) => {
-  localStorage.setItem("theme", theme);
+  const onToggle = () => {
+    const next = toggleTheme();
+    setThemeState(next);
+    window.dispatchEvent(new Event("theme-change"));
+  };
 
-  if (theme === "dark") {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-};
-
-export const toggleTheme = () => {
-  const next = getTheme() === "dark" ? "light" : "dark";
-  setTheme(next);
-  return next;
-};
+  return (
+    <button
+      onClick={onToggle}
+      className="
+        px-3 py-2 rounded-lg
+        bg-white/10 dark:bg-white/5
+        text-white dark:text-white/90
+        hover:bg-white/20 transition
+      "
+    >
+      {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+    </button>
+  );
+}

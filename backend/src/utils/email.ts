@@ -3,7 +3,7 @@ import { transporter } from "../libs/emailConfig";
 export const sendVerificationMail = async (email: string, verificationCode: string)=>{
     try {
         const response = await transporter.sendMail({
-            from: `app-name <process.env.EMAIL>`,
+            from: `ChitChat <process.env.EMAIL>`,
             to: email,
             subject: "OTP verification",
             text: "Verify your email",
@@ -14,11 +14,11 @@ export const sendVerificationMail = async (email: string, verificationCode: stri
   <p style="font-size: 15px; color: #555;">
     Hello,
     <br><br>
-    Your verification code is:${verificationCode}
+    Your verification code is:
   </p>
 
   <div style="font-size: 32px; font-weight: bold; color: #2b6cb0; text-align: center; margin: 20px 0;">
-    {{OTP}}
+    ${verificationCode}
   </div>
 
   <p style="font-size: 14px; color: #777;">
@@ -27,7 +27,7 @@ export const sendVerificationMail = async (email: string, verificationCode: stri
   </p>
 
   <p style="font-size: 14px; color: #555; margin-top: 30px;">
-    — The {{APP_NAME}} Team
+    — The ChitChat Team
   </p>
 </div>
 `
@@ -40,7 +40,7 @@ export const sendVerificationMail = async (email: string, verificationCode: stri
 export const welcomeEmail = async (email: string,name:string)=> {
     try {
         const response = transporter.sendMail({
-            from: `app-name <process.env.EMAIL>`,
+            from: `ChitChat <process.env.EMAIL>`,
             to: email,
             subject: "Welcome to our community",
             text: "Welcome to our community",
@@ -48,7 +48,7 @@ export const welcomeEmail = async (email: string,name:string)=> {
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Welcome to Our App</title>
+  <title>Welcome to ChitChat Community</title>
 </head>
 <body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
@@ -59,7 +59,7 @@ export const welcomeEmail = async (email: string,name:string)=> {
           <!-- Header -->
           <tr>
             <td align="center" style="background:#4f46e5; padding:25px; color:#ffffff;">
-              <h1 style="margin:0; font-size:26px;">Welcome to Our App 🎉</h1>
+              <h1 style="margin:0; font-size:26px;">Welcome to Our ChitChat 🎉</h1>
             </td>
           </tr>
 
@@ -95,7 +95,7 @@ export const welcomeEmail = async (email: string,name:string)=> {
           <!-- Footer -->
           <tr>
             <td align="center" style="background:#f0f0f0; padding:15px; font-size:12px; color:#555;">
-              © {{year}} Our App. All rights reserved.
+              © 2025 ChitChat. All rights reserved.
             </td>
           </tr>
 
@@ -116,7 +116,7 @@ export const welcomeEmail = async (email: string,name:string)=> {
 export const forgetPasswordOtpMail = async (email: string, resetPasswordOtp: string) => {
   try {
     const response = transporter.sendMail({
-      from: `app-name <process.env.EMAIL`,
+      from: `ChitChat <process.env.EMAIL`,
       to: email,
       subject: "Forget password otp",
       text: "Forget password otp",
@@ -132,7 +132,7 @@ export const forgetPasswordOtpMail = async (email: string, resetPasswordOtp: str
       ${resetPasswordOtp}
     </h1>
 
-    <p>This OTP is valid for <b>10 minutes</b>. Do not share it with anyone.</p>
+    <p>This OTP is valid for <b>5 minutes</b>. Do not share it with anyone.</p>
 
     <p style="margin-top:25px;">Regards,<br><b>Your App Team</b></p>
   </div>

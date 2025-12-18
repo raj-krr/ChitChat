@@ -29,13 +29,11 @@ export default function DashboardPage() {
     >
       {/* Background grid */}
       <div
-  className="
-    absolute inset-0 bg-grid
-    pointer-events-none
-    z-0
-    opacity-[0.03] md:opacity-25
-  "
-></div>
+        className="
+          absolute inset-0 bg-grid pointer-events-none
+          opacity-[0.03] md:opacity-25
+        "
+      ></div>
 
       {/* DESKTOP NAVBAR ONLY */}
       <div className="hidden md:block fixed top-0 left-0 w-full z-[100]">
@@ -44,21 +42,18 @@ export default function DashboardPage() {
 
       <div className="md:pt-24 relative z-10">
         <div
-  className="
-    max-w-7xl mx-auto
-    h-[calc(100vh-7rem)]
-    overflow-hidden
-    relative
-    z-10
+          className="
+            max-w-7xl mx-auto
+            h-[calc(100vh-7rem)]
+            overflow-hidden
 
-    md:rounded-3xl
-    md:bg-white/10
-    md:backdrop-blur-2xl
-    md:border md:border-white/20
-    md:shadow-2xl
-  "
->
-
+            md:rounded-3xl
+            md:bg-white/10
+            md:backdrop-blur-2xl
+            md:border md:border-white/20
+            md:shadow-2xl
+          "
+        >
           {/* MAIN GRID */}
           <div className="h-full grid grid-cols-1 md:grid-cols-[320px_1fr]">
             {/* SIDEBAR */}
