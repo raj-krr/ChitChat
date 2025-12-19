@@ -10,11 +10,9 @@ export default function PublicRoute({
 }) {
     const { isAuth } = useAuth();
     
-
-
 if (isAuth === null) {
   return <TopLoader />;
-}
+  }
 
   if (isAuth) {
     return <Navigate to="/dashboard" replace />;

@@ -175,7 +175,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(200).cookie("accessToken", accessToken, AccessOptions).cookie("refreshToken", refreshToken, RefreshOptions).json({ success: true, msg: "login successfull" });
     
     } catch (error) {
-        return res.status(400).json({ success: true, msg: "server error" })
+        return res.status(400).json({ success: false, msg: "server error",error })
     };
 };
 export const forgetPassword = async (req: Request, res: Response) => {

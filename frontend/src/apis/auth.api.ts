@@ -43,7 +43,7 @@ export const logoutApi = () => {
   return axiosInstance.post(
     "/auth/logout",
     {},
-    { withCredentials: true }
+    { _skipAuthRefresh: true }
   );
 };
 export const refreshApi = () => {

@@ -1,15 +1,5 @@
-import { logoutApi } from "../apis/auth.api";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const navigate = useNavigate();
+const { logout } = useAuth();
 
-const handleLogout = async () => {
-  try {
-    await logoutApi();
-    navigate("/login");  // redirect immediately
-  } catch (error: any) {
-    console.error("Logout failed:", error);
-    alert("Something went wrong");
-  }
-};
-<button onClick={handleLogout}>Logout</button>
+<button onClick={logout}>Logout</button>

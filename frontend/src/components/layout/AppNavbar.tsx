@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { logoutApi } from "../../apis/auth.api";
-import { socket } from "../../apis/socket";
+import { useAuth } from "../../context/AuthContext";
 
 type Props = {
   active?: "home" | "profile" | "notifications";
@@ -12,16 +11,11 @@ export default function AppNavbar({
   unreadCount = 0,
 }: Props) {
   const navigate = useNavigate();
+  const { logout } = useAuth(); 
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
-      await logoutApi();
-
-      if (socket.connected) {
-        socket.disconnect();
-      }
-
-      navigate("/login");
+      await logout(); 
     } catch (err) {
       console.error("Logout failed", err);
     }
@@ -39,19 +33,7 @@ export default function AppNavbar({
     }`;
 
   return (
-    <div
-      className="
-        fixed top-3 left-1/2 -translate-x-1/2
-        w-[93%] max-w-6xl
-        backdrop-blur-xl bg-white/25
-        border border-white/30
-        shadow-lg rounded-2xl
-        px-6 py-3
-        flex justify-between items-center
-        z-[100]
-      "
-    >
-      {/* BRAND (DESKTOP + MOBILE) */}
+    <div className="fixed top-3 left-1/2 -translate-x-1/2 w-[93%] max-w-6xl backdrop-blur-xl bg-white/25 border border-white/30 shadow-lg rounded-2xl px-6 py-3 flex justify-between items-center z-[100]">
       <h1
         className="text-white text-xl font-bold cursor-pointer"
         onClick={() => go("/dashboard")}
@@ -59,7 +41,6 @@ export default function AppNavbar({
         ChitChat
       </h1>
 
-      {/* DESKTOP NAV ONLY */}
       <div className="hidden sm:flex gap-6 items-center text-white font-medium">
         <button onClick={() => go("/dashboard")} className={tabClass("home")}>
           Home
@@ -75,19 +56,16 @@ export default function AppNavbar({
         >
           Notifications
           {unreadCount > 0 && (
-            <span
-              className="
-                absolute -top-1 -right-2
-                text-[10px] px-1.5 py-0.5
-                rounded-full bg-red-500 text-white
-              "
-            >
+            <span className="absolute -top-1 -right-2 text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white">
               {unreadCount}
             </span>
           )}
         </button>
 
-        <button onClick={logout} className="text-red-300 hover:text-red-400">
+        <button
+          onClick={handleLogout}
+          className="text-red-300 hover:text-red-400"
+        >
           Logout
         </button>
       </div>

@@ -1,49 +1,58 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { refreshApi } from "../apis/auth.api";
+import { refreshApi, logoutApi } from "../apis/auth.api";
 import { socket } from "../apis/socket";
+import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
   isAuth: boolean | null;
   user: any | null;
-   setIsAuth: (v: boolean) => void;
-  setUser: (u: any) => void;
+  refreshAuth: () => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   isAuth: null,
   user: null,
-    setIsAuth: () => {},
-  setUser: () => {},
+  refreshAuth: async () => {},
+  logout: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuth, setIsAuth] = useState<boolean | null>(null);
   const [user, setUser] = useState<any | null>(null);
+  const navigate = useNavigate();
+
+  const refreshAuth = async () => {
+    try {
+      const res = await refreshApi();
+      setUser(res.data.user);
+      setIsAuth(true);
+      socket.connect();
+    } catch {
+      setIsAuth(false);
+      setUser(null);
+    }
+  };
 
   useEffect(() => {
-    const bootstrap = async () => {
-      try {
-        const res = await refreshApi();
-        setUser(res.data.user);
-        setIsAuth(true);
-
-        socket.connect(); 
-      } catch {
-        setIsAuth(false);
-        setUser(null);
-      }
-    };
-    
-    bootstrap();
-
+    refreshAuth();
   }, []);
 
+  const logout = async () => {
+    await logoutApi();
+    socket.disconnect();
+
+    setIsAuth(false);
+    setUser(null);
+
+    //  FORCE EXIT FROM PROTECTED ROUTE
+    navigate("/login", { replace: true });
+  };
+
   return (
-   <AuthContext.Provider
-  value={{ isAuth, user, setIsAuth, setUser }}
->
-  {children}
-</AuthContext.Provider>
+    <AuthContext.Provider value={{ isAuth, user, refreshAuth, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 
