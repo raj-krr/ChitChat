@@ -64,7 +64,7 @@ const { logout } = useAuth();
       dob: u.dob ? new Date(u.dob).toISOString().split("T")[0] : "",
         gender: u.gender ?? "male",
         bio: u.bio || "",
-        avatar: u.avatar || "",
+         avatar: u.avatar ? `${u.avatar}?t=${Date.now()}` : "",
       });
         
     } finally {

@@ -36,7 +36,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       const genderKey = gender.toLowerCase();
       updateData.gender = genderKey;
 
-      if (!user.avatar) {
+       if (user.avatarSource !== "user") {
         const avatarFolders: Record<string, string[]> = {
           male: ["Boy05.png", "Boy06.png", "Boy13.png", "Boy14.png", "Boy18.png", "Boy19.png", "Boy20.png", "Boy02.png"],
           female: ["Girl08.png", "Girl01.png", "Girl11.png", "Girl19.png", "Girl18.png", "Girl04.png", "Girl06.png", "Girl14.png", "Girl03.png"],
@@ -98,7 +98,7 @@ if (!allowedMimeTypes.includes(req.file.mimetype)){
 
     const filePath = req.file.path;
     const fileExt = path.extname(req.file.originalname);
-    const fileKey = `user-avatars/${userID}/profile-${fileExt}`;
+    const fileKey = `user-avatars/${userID}/profile-${Date.now()}-${fileExt}`;
 
     // Upload to S3
     const fileContent = fs.readFileSync(filePath);
@@ -117,7 +117,10 @@ if (!allowedMimeTypes.includes(req.file.mimetype)){
 
     const updatedUser = await UserMOdel.findByIdAndUpdate(
       userID,
-      { avatar: photoUrl },
+      {
+    avatar: photoUrl,
+    avatarSource: "user", 
+  },
       { new: true }
       ).select("-password -refreshToken");
       
@@ -135,15 +138,56 @@ if (!allowedMimeTypes.includes(req.file.mimetype)){
 };
 
 export const getprofile = async (req: Request, res: Response) => {
-    try {
-        const userID = req.user?.userId;
-        const user = await UserMOdel.findById(userID);
+  try {
+    const userID = req.user?.userId;
+    if (!userID) {
+      return res.status(401).json({ success: false, msg: "unauthorised" });
+    }
 
-        const safeUser = sanitizeUser(user);
+    let user = await UserMOdel.findById(userID);
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
 
-        return res.status(200).json({ success: true, msg: "User info:", safeUser });
+    //  AUTO-ASSIGN AVATAR IF MISSING
+    if (!user.avatar) {
+      const genderKey = (user.gender || "male").toLowerCase();
 
-    } catch (error) {
-        res.status(500).json({ success: false, msg: "Internal server error" });
-    };
+      const avatarFolders: Record<string, string[]> = {
+        male: [
+          "Boy05.png","Boy06.png","Boy13.png","Boy14.png",
+          "Boy18.png","Boy19.png","Boy20.png","Boy02.png",
+        ],
+        female: [
+          "Girl08.png","Girl01.png","Girl11.png","Girl19.png",
+          "Girl18.png","Girl04.png","Girl06.png","Girl14.png","Girl03.png",
+        ],
+        other: ["avatar1.png","avatar2.png","avatar3.png","avatar4.png","avatar5.png"],
+      };
+
+      const list = avatarFolders[genderKey] || avatarFolders.male;
+
+      const index =
+        Array.from(userID.toString()).reduce(
+          (sum, c) => sum + c.charCodeAt(0),
+          0
+        ) % list.length;
+
+      user.avatar = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${genderKey}/${list[index]}`;
+      user.avatarSource = "auto";
+
+      await user.save(); 
+    }
+
+    const safeUser = sanitizeUser(user);
+    return res.status(200).json({
+      success: true,
+      msg: "User info",
+      safeUser,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, msg: "Internal server error" });
+  }
 };
