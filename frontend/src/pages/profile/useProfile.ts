@@ -1,11 +1,10 @@
-// pages/profile/useProfile.ts
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   getProfileApi,
   updateProfileApi,
   uploadProfilePhotoApi,
 } from "../../apis/profile.api";
+import { useAuth } from "../../context/AuthContext";
 
 export type Profile = {
   firstName: string;
@@ -19,9 +18,8 @@ export type Profile = {
 };
 
 export function useProfile() {
-  const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement | null>(null);
-
+const { logout } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -88,6 +86,15 @@ export function useProfile() {
       err.username = "Max 20 characters";
     else if (!/^[a-zA-Z0-9._-]+$/.test(profile.username))
       err.username = "Invalid username";
+     if (profile.dob) {
+  const dobDate = new Date(profile.dob);
+  const age =
+    new Date().getFullYear() - dobDate.getFullYear();
+
+  if (age < 12 || age > 101) {
+    err.dob = "Age must be between 12 and 101 years";
+  }
+}
 
     if (profile.bio.length > 50) err.bio = "Max 50 characters";
 
@@ -132,10 +139,14 @@ export function useProfile() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+ const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
   };
+
 
   return {
     profile,
@@ -149,6 +160,6 @@ export function useProfile() {
     updateFullName,
     saveChanges,
     handleUpload,
-    logout,
+    handleLogout,
   };
 }

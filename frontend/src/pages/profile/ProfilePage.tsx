@@ -1,7 +1,7 @@
 import AppNavbar from "../../components/layout/AppNavbar";
 import MobileBottomNav from "../../components/layout/MobileBottomNav";
 import TopLoader from "../../components/TopLoader";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useScrollDirection } from "../../utils/useScrollDirection";
 import { useProfile } from "./useProfile";
@@ -12,7 +12,7 @@ export default function ProfilePage() {
   const navVisible = useScrollDirection();
   const profileState = useProfile();
 
-  const { initializing, profile } = profileState;
+    const { initializing, profile, handleLogout } = profileState;
 
   return (
     <div
@@ -40,12 +40,24 @@ export default function ProfilePage() {
       </div>
 
       {/* MOBILE HEADER */}
-      <div className="md:hidden flex items-center gap-3 px-4 py-4 text-white">
-        <button onClick={() => navigate(-1)}>
-          <ArrowLeft />
-        </button>
-        <h1 className="text-lg font-semibold">Profile</h1>
-      </div>
+    <div className="md:hidden flex items-center justify-between px-4 py-4 text-white">
+  <div className="flex items-center gap-3">
+    <button onClick={() => navigate(-1)}>
+      <ArrowLeft />
+    </button>
+    <h1 className="text-lg font-semibold">Profile</h1>
+  </div>
+
+  {/* MOBILE LOGOUT ICON */}
+  <button
+    onClick={handleLogout}
+    className="p-2 rounded-full bg-white/20 active:scale-95"
+    title="Logout"
+  >
+    <LogOut size={20} />
+  </button>
+</div>
+
 
       {/* MAIN CONTENT */}
       <div className="relative z-10 px-4 md:mt-24">

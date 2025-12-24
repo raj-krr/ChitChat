@@ -104,7 +104,7 @@ export default function Sidebar({
       </div>
 
       {/*  LIST */}
-      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2">
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2 pb-28">
         {mode === "requests" && (
           <FriendRequests onAccepted={loadChats} />
         )}

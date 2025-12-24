@@ -1,5 +1,24 @@
 import { TextInput, Textarea, Select, Button } from "@mantine/core";
 
+const today = new Date();
+
+const maxDate = new Date(
+  today.getFullYear() - 12,
+  today.getMonth(),
+  today.getDate()
+)
+  .toISOString()
+  .split("T")[0];
+
+const minDate = new Date(
+  today.getFullYear() - 101,
+  today.getMonth(),
+  today.getDate()
+)
+  .toISOString()
+  .split("T")[0];
+
+
 export function ProfileView({
   profile,
   setProfile,
@@ -107,16 +126,18 @@ export function ProfileView({
             onChange={(e) => updateFullName(e.target.value)}
           />
         </div>
+<TextInput
+  label="Date of Birth"
+  type="date"
+  value={profile.dob || ""}
+  min={minDate}   // 101 years ago
+  max={maxDate}   // 12 years ago
+  error={errors.dob}
+  onChange={(e) =>
+    setProfile({ ...profile, dob: e.target.value })
+  }
+/>
 
-        <TextInput
-          label="Date of Birth"
-          type="date"
-          value={profile.dob ?? ""}
-          error={errors.dob}
-          onChange={(e) =>
-            setProfile({ ...profile, dob: e.target.value })
-          }
-        />
 
         <Select
           label="Gender"
