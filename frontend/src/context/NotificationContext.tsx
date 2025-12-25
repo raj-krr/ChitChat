@@ -43,7 +43,6 @@ export const NotificationProvider = ({
       setNotifications(res.data.notifications || []);
       setUnreadCount(res.data.unreadCount || 0);
     } catch (err) {
-      console.error("FETCH NOTIFICATIONS ERROR", err);
       setNotifications([]);
       setUnreadCount(0);
     } finally {

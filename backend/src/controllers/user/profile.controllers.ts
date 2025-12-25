@@ -149,7 +149,7 @@ export const getprofile = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, msg: "User not found" });
     }
 
-    //  AUTO-ASSIGN AVATAR IF MISSING
+    // AUTO ASSIGN AVATAR
     if (!user.avatar) {
       const genderKey = (user.gender || "male").toLowerCase();
 
@@ -162,11 +162,10 @@ export const getprofile = async (req: Request, res: Response) => {
           "Girl08.png","Girl01.png","Girl11.png","Girl19.png",
           "Girl18.png","Girl04.png","Girl06.png","Girl14.png","Girl03.png",
         ],
-        other: ["avatar1.png","avatar2.png","avatar3.png","avatar4.png","avatar5.png"],
+        other: ["avatar1.png","avatar2.png","avatar3.png"],
       };
 
       const list = avatarFolders[genderKey] || avatarFolders.male;
-
       const index =
         Array.from(userID.toString()).reduce(
           (sum, c) => sum + c.charCodeAt(0),
@@ -175,11 +174,11 @@ export const getprofile = async (req: Request, res: Response) => {
 
       user.avatar = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${genderKey}/${list[index]}`;
       user.avatarSource = "auto";
-
-      await user.save(); 
+      await user.save();
     }
 
     const safeUser = sanitizeUser(user);
+
     return res.status(200).json({
       success: true,
       msg: "User info",

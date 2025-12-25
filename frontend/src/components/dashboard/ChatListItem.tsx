@@ -17,6 +17,8 @@ export default function ChatListItem({
   unreadCount = 0,
   onClick,
 }: Props) {
+
+   if (!user || !user._id) return null;
   const { onlineUsers } = usePresence();
   const isOnline = onlineUsers.has(user._id);
 
@@ -43,7 +45,7 @@ export default function ChatListItem({
 
           "
           onClick={(e) => {
-            e.stopPropagation(); // 🔥 prevent chat open
+            e.stopPropagation(); // prevent chat open
             peek.open(e, user);
           }}
         >
