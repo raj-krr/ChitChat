@@ -32,16 +32,25 @@ const getFileType = (urlOrName: string) => {
       : msg.senderId?.toString();
 
  
-   
-   const getPreviewUrl = () => {
-  if (msg.file) return msg.file;
+ const getPreviewUrl = () => {
+  if (typeof msg.file === "string") {
+    return msg.file;
+  }
 
-  if (msg.attachment && msg.attachment instanceof File) {
-    return URL.createObjectURL(msg.attachment);
+  // local file before upload (REAL File)
+  if (
+    msg.attachment &&
+    typeof msg.attachment === "object" &&
+    "name" in msg.attachment &&
+    "size" in msg.attachment &&
+    "type" in msg.attachment
+  ) {
+    return URL.createObjectURL(msg.attachment as File);
   }
 
   return null;
 };
+
   
    const fileType = msg.file
   ? getFileType(msg.file)
@@ -181,7 +190,7 @@ const previewUrl = getPreviewUrl();
         )}
 
         {msg.status === "sending" && (
-          <span className="text-xs opacity-60">Sending…</span>
+          <span className="text-xs opacity-60"></span>
         )}
 
         {msg.status === "failed" && (

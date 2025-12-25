@@ -24,8 +24,6 @@ const formatDateLabel = (date: string) => {
   return d.toLocaleDateString();
 };
 
-
-
 export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
 
@@ -40,68 +38,57 @@ export default function ChatWindow({ chat, onBack }: any) {
     shouldAutoScrollRef,
   } = useChatMessages(chat._id);
 
-  const {
-    showNewMsgBtn,
-    setShowNewMsgBtn,
-    isTyping,
-    markRead,
-  } = useChatSocket({
-    chatId: chat._id,
-    userId: user?._id,
-    setMessages,
-    shouldAutoScrollRef,
-    endRef,
-  });
+  const { showNewMsgBtn, setShowNewMsgBtn, isTyping, markRead } = useChatSocket(
+    {
+      chatId: chat._id,
+      userId: user?._id,
+      setMessages,
+      shouldAutoScrollRef,
+      endRef,
+    }
+  );
 
-    useEffect(() => {
-  if (shouldAutoScrollRef.current) {
-    endRef.current?.scrollIntoView({ behavior: "auto" });
-  }
-    }, [messages]);
-  
+  useEffect(() => {
+    if (shouldAutoScrollRef.current) {
+      endRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages]);
+
   const handleScroll = async () => {
     const el = containerRef.current;
     if (!el) return;
 
-    const atBottom =
-      el.scrollHeight - el.scrollTop <= el.clientHeight + 20;
+    const atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 20;
 
     shouldAutoScrollRef.current = atBottom;
-    
-const lastVisibleMsg = visibleMessages[visibleMessages.length - 1];
 
-const hasUnreadFromChatUser =
-  lastVisibleMsg &&
-  lastVisibleMsg.senderId !== user?._id;
+    const lastVisibleMsg = visibleMessages[visibleMessages.length - 1];
 
+    const hasUnreadFromChatUser =
+      lastVisibleMsg && lastVisibleMsg.senderId !== user?._id;
 
-if (atBottom) {
-  setShowNewMsgBtn(false);
+    if (atBottom) {
+      setShowNewMsgBtn(false);
 
-  if (hasUnreadFromChatUser) {
-    await markRead();
-  }
-}
+      if (hasUnreadFromChatUser) {
+        await markRead();
+      }
+    }
 
     if (el.scrollTop < 50 && hasMore && !loadingMore) {
       await loadMessages();
     }
   };
-const normalizedMessages = messages.map((m, index) => ({
-  ...m,
-  __key:
-    m._id ??
-    m.clientId ??
-    `${m.senderId}-${m.createdAt}-${index}`,
-}));
+  const normalizedMessages = messages.map((m, index) => ({
+    ...m,
+    __key: m._id ?? m.clientId ?? `${m.senderId}-${m.createdAt}-${index}`,
+  }));
 
-  
-  const visibleMessages = normalizedMessages.filter(m => {
-  if (!m._id) return true;
+  const visibleMessages = normalizedMessages.filter((m) => {
+    if (!m._id) return true;
 
-  return !m.deletedFor?.includes(user._id);
-});
-
+    return !m.deletedFor?.includes(user._id);
+  });
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
@@ -110,47 +97,52 @@ const normalizedMessages = messages.map((m, index) => ({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-3  "
+        className="flex-1 overflow-y-auto px-4 pt-3"
       >
-    {visibleMessages.map((m, i) => {
-  const prev = visibleMessages[i - 1];
-      const currDate = safeDate(m.createdAt); 
-      const prevDate = safeDate(prev?.createdAt);
-      
-const showDate =
-  currDate &&
-  (!prevDate ||
-    currDate.toDateString() !== prevDate.toDateString());
+        {visibleMessages.map((m, i) => {
+          const prev = visibleMessages[i - 1];
+          const currDate = safeDate(m.createdAt);
+          const prevDate = safeDate(prev?.createdAt);
 
-  const showAvatar =
-    !prev || prev.senderId !== m.senderId;
+          const showDate =
+            currDate &&
+            (!prevDate || currDate.toDateString() !== prevDate.toDateString());
 
-  return (
-    <div key={m.__key}>
-      {showDate && currDate && (
-  <div className="text-center my-3 text-xs text-white/60">
-    {formatDateLabel(currDate.toISOString())}
-  </div>
-)}
+          const showAvatar = !prev || prev.senderId !== m.senderId;
 
-      <MessageBubble
-        msg={m}
-        chatUser={chat}
-        showAvatar={showAvatar}
-      />
-    </div>
-  );
-})}
+          return (
+            <div key={m.__key}>
+              {showDate && currDate && (
+                <div className="text-center my-3 text-xs text-white/60">
+                  {formatDateLabel(currDate.toISOString())}
+                </div>
+              )}
+
+              <MessageBubble msg={m} chatUser={chat} showAvatar={showAvatar} />
+            </div>
+          );
+        })}
 
         <div ref={endRef} />
       </div>
 
-      {isTyping && (
-  <div className="px-4 pb-1 text-xs text-white/60">
-    typing…
-  </div>
-)}
-
+      <div
+        className="
+    px-4 pb-1 text-xs text-white/60
+    transition-opacity duration-200
+  "
+        style={{
+          minHeight: "14px",
+          opacity: isTyping ? 1 : 0,
+        }}
+      >
+        Typing
+        <span className="typing-dots ml-1">
+          <span>.</span>
+          <span>.</span>
+          <span>.</span>
+        </span>
+      </div>
 
       {showNewMsgBtn && (
         <button
@@ -169,15 +161,9 @@ const showDate =
           New messages ↓
         </button>
       )}
-<div className="shrink-0 border-t border-white/10 bg-white/10 backdrop-blur-xl">
-  <MessageInput
-  chatId={chat._id}
-  onLocalSend={setMessages}
-/>
-
-
-</div>
-
+      <div className="shrink-0 border-t border-white/10 bg-white/10 backdrop-blur-xl">
+        <MessageInput chatId={chat._id} onLocalSend={setMessages} />
+      </div>
     </div>
   );
 }
