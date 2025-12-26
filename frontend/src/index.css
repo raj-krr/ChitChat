@@ -42,6 +42,18 @@
     opacity: 0.2;
   }
 }
+.reply-highlight {
+  animation: replyFlash 1.2s ease-out;
+}
+
+@keyframes replyFlash {
+  0% {
+    background-color: rgba(99, 102, 241, 0.35);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
 
 @keyframes loading-bar {
   0% {

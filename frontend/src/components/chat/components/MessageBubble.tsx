@@ -1,10 +1,11 @@
+import React from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { useState } from "react";
+import { useState,useRef } from "react";
 import {
   deleteMessageForEveryoneApi,
   deleteMessageForMeApi,
 } from "../../../apis/chat.api";
-import { Paperclip ,File,Check, CheckCheck, Clock } from "lucide-react";
+import { Paperclip, File, Check, CheckCheck, Clock } from "lucide-react";
 
 const getFileType = (urlOrName: string) => {
   const ext = urlOrName.split(".").pop()?.toLowerCase();
@@ -21,9 +22,27 @@ const getFileType = (urlOrName: string) => {
 };
 
 //  export default function MessageBubble({ msg, chatUser }: any) {
- export default function MessageBubble({ msg }: any) {
+ function MessageBubble({ msg,onReply,onJump }: any) {
   const { user } = useAuth();
   const [showActions, setShowActions] = useState(false);
+
+   const startX = useRef<number | null>(null);
+
+const onTouchStart = (e: React.TouchEvent) => {
+  startX.current = e.touches[0].clientX;
+};
+
+const onTouchEnd = (e: React.TouchEvent) => {
+  if (startX.current === null) return;
+
+  const deltaX = e.changedTouches[0].clientX - startX.current;
+
+  if (deltaX > 60) {
+    onReply?.(msg); 
+  }
+
+  startX.current = null;
+};
 
   const myId = user?._id?.toString();
   const senderId =
@@ -31,35 +50,32 @@ const getFileType = (urlOrName: string) => {
       ? msg.senderId._id?.toString()
       : msg.senderId?.toString();
 
- 
- const getPreviewUrl = () => {
-  if (typeof msg.file === "string") {
-    return msg.file;
-  }
+  const getPreviewUrl = () => {
+    if (typeof msg.file === "string") {
+      return msg.file;
+    }
 
-  // local file before upload (REAL File)
-  if (
-    msg.attachment &&
-    typeof msg.attachment === "object" &&
-    "name" in msg.attachment &&
-    "size" in msg.attachment &&
-    "type" in msg.attachment
-  ) {
-    return URL.createObjectURL(msg.attachment as File);
-  }
+    // local file before upload (REAL File)
+    if (
+      msg.attachment &&
+      typeof msg.attachment === "object" &&
+      "name" in msg.attachment &&
+      "size" in msg.attachment &&
+      "type" in msg.attachment
+    ) {
+      return URL.createObjectURL(msg.attachment as File);
+    }
 
-  return null;
-};
+    return null;
+  };
 
-  
-   const fileType = msg.file
-  ? getFileType(msg.file)
-  : msg.attachment
-  ? getFileType(msg.attachment.name)
-  : null;
+  const fileType = msg.file
+    ? getFileType(msg.file)
+    : msg.attachment
+    ? getFileType(msg.attachment.name)
+    : null;
 
-const previewUrl = getPreviewUrl();
-
+  const previewUrl = getPreviewUrl();
 
   const isMe = senderId === myId;
 
@@ -68,12 +84,15 @@ const previewUrl = getPreviewUrl();
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setShowActions(true);
-  };
-
+   };
+   
   return (
     <div
+      data-msg-id={msg._id ?? msg.clientId}
       className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}
       onClick={() => setShowActions(false)}
+      onTouchStart={onTouchStart}
+  onTouchEnd={onTouchEnd}
     >
       <div
         onContextMenu={handleContextMenu}
@@ -92,6 +111,15 @@ const previewUrl = getPreviewUrl();
         {/* ACTIONS */}
         {showActions && (
           <div className="flex gap-3 mb-2 text-xs opacity-70">
+            <button
+              onClick={() => {
+                setShowActions(false);
+                onReply?.(msg);
+              }}
+            >
+              Reply
+            </button>
+
             <button
               disabled={!msg._id}
               onClick={() => {
@@ -128,21 +156,49 @@ const previewUrl = getPreviewUrl();
         {msg.isDeleted ? (
           <span className="italic opacity-60">This message was deleted</span>
         ) : (
-          <>
+            <>
+              
+
+{msg.replyTo && (
+  <div
+  className="relative z-10 mb-2 px-3 py-2 rounded-lg bg-black/25 border-l-4 border-indigo-400 text-xs cursor-pointer hover:bg-black/30"
+
+    onClick={(e) => {
+      e.stopPropagation();
+      
+  const targetId =
+    msg.replyTo._id ?? msg.replyTo.clientId;
+
+  if (!targetId) return;
+
+  onJump?.(targetId.toString());
+    }}
+  >
+    <div className="opacity-70 mb-1">
+  {msg.replyTo.senderId?.toString() === myId
+    ? "You"
+    : msg.replyTo.senderName || "user"}
+</div>
+
+
+    <div className="truncate">
+      {msg.replyTo.text || "Attachment"}
+    </div>
+  </div>
+)}
+
+
             {/* TEXT (only if meaningful) */}
             {msg.text?.trim() && <div>{msg.text}</div>}
 
             {fileType === "image" && previewUrl && (
-  <img
-    src={previewUrl}
-    alt="attachment"
-    className="mt-2 max-w-[160px] max-h-[160px] rounded-lg object-cover cursor-pointer"
-    onClick={() =>
-      window.open(msg.file || previewUrl, "_blank")
-    }
-  />
-)}
-
+              <img
+                src={previewUrl}
+                alt="attachment"
+                className="mt-2 max-w-[160px] max-h-[160px] rounded-lg object-cover cursor-pointer"
+                onClick={() => window.open(msg.file || previewUrl, "_blank")}
+              />
+            )}
 
             {/* VIDEO FILE (icon-based, not inline video) */}
             {msg.file && fileType === "video" && (
@@ -198,36 +254,34 @@ const previewUrl = getPreviewUrl();
             Retry
           </button>
         )}
-
+     
+        
         {/* META */}
         <div className="flex justify-end items-center gap-1 text-[10px] opacity-60 mt-1">
-  {msg.createdAt &&
-    !isNaN(new Date(msg.createdAt).getTime()) &&
-    new Date(msg.createdAt).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}
+          {msg.createdAt &&
+            !isNaN(new Date(msg.createdAt).getTime()) &&
+            new Date(msg.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
 
-  {isMe && (
-    <>
-      {msg.status === "sending" && <Clock size={12} />}
+          {isMe && (
+            <>
+              {msg.status === "sending" && <Clock size={12} />}
 
-      {msg.status === "sent" && !msg.isRead && (
-        <Check size={14} />
-      )}
+              {msg.status === "sent" && !msg.isRead && <Check size={14} />}
 
-      {msg.status === "delivered" && !msg.isRead && (
-        <CheckCheck size={14} />
-      )}
+              {msg.status === "delivered" && !msg.isRead && (
+                <CheckCheck size={14} />
+              )}
 
-      {msg.isRead && (
-        <CheckCheck size={14} className="text-blue-400" />
-      )}
-    </>
-  )}
-</div>
-
+              {msg.isRead && <CheckCheck size={14} className="text-blue-400" />}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+export default React.memo(MessageBubble);
+

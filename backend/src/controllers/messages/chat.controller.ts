@@ -9,6 +9,17 @@ import { Types } from "mongoose";
 import { onlineUsers } from "../../socket";
 import { getIO } from "../../socketEmitter";
 import mongoose from "mongoose";
+import { IMessage } from "../../models/message.model";
+
+type PopulatedReplyTo = {
+  _id: Types.ObjectId;
+   clientId?: string; 
+  text?: string;
+  senderId: {
+    _id: Types.ObjectId;
+    username: string;
+  };
+};
 
 export const getMyFriends = async (req: Request, res: Response) => {
   try {
@@ -147,12 +158,33 @@ export const getMessages = async (req: Request, res: Response) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("senderId", "username avatar");
+      .populate("senderId", "username avatar")
+      .populate({
+  path: "replyTo",
+  select: "text senderId",
+  populate: {
+    path: "senderId",
+    select: "username",
+  },
+})
 
-    return res.status(200).json({
-      success: true,
-      messages: messages.reverse(),
-    });
+    const normalizedMessages = messages.reverse().map((m: any) => ({
+  ...m.toObject(),
+  replyTo: m.replyTo
+    ? {
+        _id: m.replyTo._id,
+      text: m.replyTo.text,
+        clientId: m.replyTo.clientId,
+        senderId: m.replyTo.senderId._id,
+        senderName: m.replyTo.senderId.username,
+      }
+    : null,
+}));
+
+return res.status(200).json({
+  success: true,
+  messages: normalizedMessages,
+});
   } catch {
     return res.status(500).json({ success: false });
   }
@@ -161,8 +193,12 @@ export const getMessages = async (req: Request, res: Response) => {
 export const sendMessages = async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
-    const { clientId } = req.body;
+    const { clientId  } = req.body;
     const { sender, receiver } = req.chatUsers!;
+   const replyTo =
+  typeof req.body.replyTo === "string"
+    ? req.body.replyTo
+    : undefined;
 
     const allowedMimesTypes = [
       "image/jpeg",
@@ -220,13 +256,44 @@ export const sendMessages = async (req: Request, res: Response) => {
       });
     }
 
-    const message = await MessageModal.create({
-      senderId: sender._id,
-      receiverId: receiver._id,
-      text,
-      file: fileUrl,
-      clientId,
-    });
+const message = await new MessageModal({
+  senderId: sender._id,
+  receiverId: receiver._id,
+  text,
+  file: fileUrl,
+  clientId,
+  ...(replyTo && { replyTo: new Types.ObjectId(replyTo) }),
+}).save();
+
+const populatedMessage = await MessageModal.findOne({
+  _id: message._id,
+})
+  .populate({
+  path: "replyTo",
+  select: "text senderId",
+  populate: {
+    path: "senderId",
+    select: "username",
+  },
+})
+  .lean<IMessage & { replyTo?: PopulatedReplyTo | null }>();
+    
+    if (!populatedMessage) {
+  return res.status(500).json({ success: false });
+}
+   const msg = {
+  ...populatedMessage,
+  replyTo: populatedMessage.replyTo
+    ? {
+        _id: populatedMessage.replyTo._id,
+      text: populatedMessage.replyTo.text,
+        clientId: populatedMessage.replyTo.clientId, 
+        senderId: populatedMessage.replyTo.senderId._id,
+        senderName: populatedMessage.replyTo.senderId.username,
+      }
+    : null,
+};
+
     const receiverIdStr = receiver._id.toString();
     const senderIdStr = sender._id.toString();
 
@@ -234,21 +301,32 @@ export const sendMessages = async (req: Request, res: Response) => {
     const io = getIO();
 
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("new-message", {
-        message: { ...message.toObject(), clientId },
-      });
-      
-      io.to(receiverSocketId).emit("unread-update", {
-        from: senderIdStr,
-      });
+  io.to(receiverSocketId).emit("new-message", {
+    message: {
+      ...msg,
+      clientId,
+    },
+  });
+      const senderSocketId = onlineUsers.get(senderIdStr);
+      if (senderSocketId) {
+  io.to(senderSocketId).emit("new-message", {
+    message: msg,
+  });
+}
+
+  io.to(receiverSocketId).emit("unread-update", {
+    from: senderIdStr,
+  });
     }
+
     return res.status(200).json({
-      success: true,
-      message: {
-        ...message.toObject(),
-        clientId,
-      },
-    });
+  success: true,
+  message: {
+    ...msg,
+    clientId,
+  },
+});
+
   } catch (error) {
     return res.status(500).json({
       success: false,

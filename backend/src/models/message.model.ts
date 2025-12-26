@@ -9,7 +9,8 @@ export interface IMessage extends Document {
   isRead?: boolean;
   isDeleted?: boolean;
   deletedFor: string[];
-  clientId:string,
+  clientId: string,
+  replyTo?: Types.ObjectId | null;
 }
 
 
@@ -39,6 +40,12 @@ deletedFor: {
   default: [],
   },
   clientId: { type: String },
+  replyTo: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Message",
+  default: null,
+}
+
 
 }, { timestamps: true },
 

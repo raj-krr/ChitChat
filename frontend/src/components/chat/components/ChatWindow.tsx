@@ -2,7 +2,7 @@ import ChatHeader from "./ChatHeader";
 import MessageBubble from "../components/MessageBubble";
 import MessageInput from "../components/MessageInput";
 import { useAuth } from "../../../context/AuthContext";
-import { useEffect } from "react";
+import { useEffect ,useState} from "react";
 
 import { useChatMessages } from "../hooks/useChatMessages";
 import { useChatSocket } from "../hooks/useChatSocket";
@@ -26,6 +26,7 @@ const formatDateLabel = (date: string) => {
 
 export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
+const [replyTo, setReplyTo] = useState<any>(null);
 
   const {
     messages,
@@ -54,6 +55,44 @@ export default function ChatWindow({ chat, onBack }: any) {
     }
   }, [messages]);
 
+  useEffect(() => {
+  setReplyTo(null);
+}, [chat._id]);
+
+const scrollToMessage = async (messageId: string) => {
+  // Try to find message in DOM
+  let el = document.querySelector(
+    `[data-msg-id="${messageId}"]`
+  ) as HTMLElement | null;
+
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("reply-highlight");
+    setTimeout(() => el.classList.remove("reply-highlight"), 1200);
+    return;
+  }
+
+  if (hasMore && !loadingMore) {
+    await loadMessages();
+  }
+
+  setTimeout(() => {
+  const retryEl = document.querySelector(
+    `[data-msg-id="${messageId}"]`
+  ) as HTMLElement | null;
+
+  if (retryEl) {
+    retryEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    retryEl.classList.add("reply-highlight");
+
+    setTimeout(() => {
+      retryEl.classList.remove("reply-highlight");
+    }, 1200);
+  }
+}, 50);
+
+};
+
   const handleScroll = async () => {
     const el = containerRef.current;
     if (!el) return;
@@ -79,10 +118,12 @@ export default function ChatWindow({ chat, onBack }: any) {
       await loadMessages();
     }
   };
-  const normalizedMessages = messages.map((m, index) => ({
-    ...m,
-    __key: m._id ?? m.clientId ?? `${m.senderId}-${m.createdAt}-${index}`,
-  }));
+const normalizedMessages = messages.map((m) => ({
+  ...m,
+  __key: m._id
+    ? `server-${m._id}`
+    : `client-${m.clientId}`, //  prefix matters
+}));
 
   const visibleMessages = normalizedMessages.filter((m) => {
     if (!m._id) return true;
@@ -118,7 +159,14 @@ export default function ChatWindow({ chat, onBack }: any) {
                 </div>
               )}
 
-              <MessageBubble msg={m} chatUser={chat} showAvatar={showAvatar} />
+             <MessageBubble
+  msg={m}
+  chatUser={chat}
+  showAvatar={showAvatar}
+                onReply={(msg: any) => setReplyTo(msg)}
+                onJump={scrollToMessage}
+/>
+
             </div>
           );
         })}
@@ -132,7 +180,7 @@ export default function ChatWindow({ chat, onBack }: any) {
     transition-opacity duration-200
   "
         style={{
-          minHeight: "14px",
+          minHeight: "px",
           opacity: isTyping ? 1 : 0,
         }}
       >
@@ -162,7 +210,44 @@ export default function ChatWindow({ chat, onBack }: any) {
         </button>
       )}
       <div className="shrink-0 border-t border-white/10 bg-white/10 backdrop-blur-xl">
-        <MessageInput chatId={chat._id} onLocalSend={setMessages} />
+        {replyTo && (
+  <div
+    className="
+      mx-4 mb-2
+      px-3 py-2
+      rounded-xl
+      bg-white/15 backdrop-blur-md
+      text-white
+      flex items-center gap-2
+    "
+  >
+    <div className="flex-1 min-w-0">
+      <div className="text-xs opacity-70 truncate">
+        {replyTo.senderId === user._id ? "You" : replyTo.senderName || "User"}
+      </div>
+
+      <div className="text-sm truncate">
+        {replyTo.text || replyTo.attachment?.name || "Attachment"}
+      </div>
+    </div>
+
+    <button
+      onClick={() => setReplyTo(null)}
+      className="shrink-0 opacity-70 hover:opacity-100"
+    >
+      ✕
+    </button>
+  </div>
+)}
+
+        <MessageInput
+          chatId={chat._id}
+          receiverId={chat._id}
+  onLocalSend={setMessages}
+  replyTo={replyTo}
+  clearReply={() => setReplyTo(null)}
+/>
+
       </div>
     </div>
   );

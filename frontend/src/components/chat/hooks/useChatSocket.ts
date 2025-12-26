@@ -28,39 +28,87 @@ export function useChatSocket({
     return () => { socket.off("message-deleted", onDeleted) };
   }, [setMessages]);
 
-  /* -------- NEW MESSAGE (🔥 FIXED) -------- */
+  /* -------- NEW MESSAGE ( FIXED) -------- */
   useEffect(() => {
   const onNewMessage = ({ message }: any) => {
-    const isCurrentChat =
-      (message.senderId === userId &&
-        message.receiverId === chatId) ||
-      (message.senderId === chatId &&
-        message.receiverId === userId);
+    const senderId =
+    typeof message.senderId === "object"
+      ? message.senderId._id
+      : message.senderId;
 
+  const receiverId =
+    typeof message.receiverId === "object"
+      ? message.receiverId._id
+        : message.receiverId;
+    
+    const isMine = String(senderId) === String(userId);
+  const isCurrentChat =
+    (senderId === userId && receiverId === chatId) ||
+      (senderId === chatId && receiverId === userId);
+    
     if (!isCurrentChat) return;
 
-    setMessages((prev: any[]) => {
-      //  Replace optimistic message
-      if (message.clientId) {
-        const exists = prev.find(m => m.clientId === message.clientId);
-        if (exists) {
-          return prev.map(m => { m.clientId === message.clientId ? message : m }
-          );
-        }
+
+    const normalizedMessage = {
+      ...message,
+      status: isMine ? "sent" : undefined,
+  replyTo: message.replyTo
+    ? {
+        _id: message.replyTo._id,
+        text: message.replyTo.text,
+        senderId:
+          typeof message.replyTo.senderId === "object"
+            ? message.replyTo.senderId._id
+            : message.replyTo.senderId,
       }
+    : null,
+};
+  
+  setMessages((prev: any[]) => {
+  if (isMine && message.clientId) {
+    const idx = prev.findIndex(
+      m => m.clientId === message.clientId
+    );
 
-      //  Normal incoming message
-      return [...prev, message];
-    });
-
-    // scroll logic unchanged
-    if (shouldAutoScrollRef.current) {
-      requestAnimationFrame(() =>
-        endRef.current?.scrollIntoView({ behavior: "smooth" })
-      );
-    } else {
-      setShowNewMsgBtn(true);
+    if (idx !== -1) {
+      const copy = [...prev];
+      copy[idx] = {
+        ...prev[idx],
+        ...normalizedMessage,
+        status: "sent",
+        isTemp: false,
+      };
+      return copy;
     }
+
+    return prev;
+  }
+
+  if (!isMine) {
+    const exists = prev.some(
+      m => m._id && m._id === message._id
+    );
+
+    if (exists) return prev;
+
+    return [...prev, normalizedMessage];
+  }
+
+  return prev;
+});
+
+    // AUTO SCROLL (but don't fight reply jump)
+if (
+  shouldAutoScrollRef.current &&
+  !message.replyTo
+) {
+  requestAnimationFrame(() =>
+    endRef.current?.scrollIntoView({ behavior: "smooth" })
+  );
+} else if (!shouldAutoScrollRef.current) {
+  setShowNewMsgBtn(true);
+}
+
   };
 
   socket.on("new-message", onNewMessage);
