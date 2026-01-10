@@ -83,10 +83,30 @@ if (replyTo?._id) form.append("replyTo", replyTo._id);
     }
   };
 
- return (
-  <div className="sticky bottom-0 bg-white/10 backdrop-blur-xl border-t border-white/20 px-4 py-3">
+return (
+  <div className="sticky bottom-0 z-10 bg-white/10 backdrop-blur-xl border-t border-white/20 px-4 py-3">
 
-    {/* 🔹 Pending file preview (OK here) */}
+    {/* 🔹 REPLY PREVIEW (UI ONLY) */}
+    {replyTo && (
+      <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/30 text-white text-sm">
+        <div className="flex-1 min-w-0">
+          <div className="text-xs opacity-70 truncate">
+            {replyTo.senderId === user._id ? "You" : replyTo.senderName || "User"}
+          </div>
+          <div className="truncate">
+            {replyTo.text || replyTo.attachment?.name || "Attachment"}
+          </div>
+        </div>
+        <button
+          onClick={clearReply}
+          className="opacity-70 hover:opacity-100"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    )}
+
+    {/* 🔹 FILE PREVIEW */}
     {pendingFile && (
       <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/20 text-white text-sm">
         <span className="truncate flex-1">{pendingFile.name}</span>
@@ -99,7 +119,7 @@ if (replyTo?._id) form.append("replyTo", replyTo._id);
       </div>
     )}
 
-    {/* 🔹 INPUT ROW ONLY */}
+    {/* 🔹 INPUT ROW */}
     <div className="flex items-center gap-2">
       <label className="cursor-pointer text-white/80 hover:text-white transition shrink-0">
         <Paperclip size={20} />
@@ -138,20 +158,19 @@ if (replyTo?._id) form.append("replyTo", replyTo._id);
       />
 
       <button
-  onClick={() => send()}
-  disabled={!text.trim() && !pendingFile}
-  className={`
-    shrink-0 p-3 rounded-xl transition
-    ${
-      text.trim() || pendingFile
-        ? "bg-indigo-500 text-white hover:bg-indigo-600"
-        : "bg-gray-400 cursor-not-allowed"
-    }
-  `}
->
-  <Send size={18} />
-</button>
-
+        onClick={() => send()}
+        disabled={!text.trim() && !pendingFile}
+        className={`
+          shrink-0 p-3 rounded-xl transition
+          ${
+            text.trim() || pendingFile
+              ? "bg-indigo-500 text-white hover:bg-indigo-600"
+              : "bg-gray-400 cursor-not-allowed"
+          }
+        `}
+      >
+        <Send size={18} />
+      </button>
     </div>
   </div>
 );

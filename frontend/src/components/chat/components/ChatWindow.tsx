@@ -132,13 +132,16 @@ const normalizedMessages = messages.map((m) => ({
   });
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative">
+    <div className="flex w-full flex-col h-full min-h-0 relative">
       <ChatHeader user={chat} onBack={onBack} />
 
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 pt-3"
+        className="
+  flex-1 overflow-y-auto px-4 pt-3
+  bg-white/10 backdrop-blur-xl
+"
       >
         {visibleMessages.map((m, i) => {
           const prev = visibleMessages[i - 1];
@@ -152,7 +155,7 @@ const normalizedMessages = messages.map((m) => ({
           const showAvatar = !prev || prev.senderId !== m.senderId;
 
           return (
-            <div key={m.__key}>
+            <div key={m.__key} className="w-full">
               {showDate && currDate && (
                 <div className="text-center my-3 text-xs text-white/60">
                   {formatDateLabel(currDate.toISOString())}
@@ -180,7 +183,7 @@ const normalizedMessages = messages.map((m) => ({
     transition-opacity duration-200
   "
         style={{
-          minHeight: "px",
+          minHeight: "12px",
           opacity: isTyping ? 1 : 0,
         }}
       >
@@ -210,35 +213,6 @@ const normalizedMessages = messages.map((m) => ({
         </button>
       )}
       <div className="shrink-0 border-t border-white/10 bg-white/10 backdrop-blur-xl">
-        {replyTo && (
-  <div
-    className="
-      mx-4 mb-2
-      px-3 py-2
-      rounded-xl
-      bg-white/15 backdrop-blur-md
-      text-white
-      flex items-center gap-2
-    "
-  >
-    <div className="flex-1 min-w-0">
-      <div className="text-xs opacity-70 truncate">
-        {replyTo.senderId === user._id ? "You" : replyTo.senderName || "User"}
-      </div>
-
-      <div className="text-sm truncate">
-        {replyTo.text || replyTo.attachment?.name || "Attachment"}
-      </div>
-    </div>
-
-    <button
-      onClick={() => setReplyTo(null)}
-      className="shrink-0 opacity-70 hover:opacity-100"
-    >
-      ✕
-    </button>
-  </div>
-)}
 
         <MessageInput
           chatId={chat._id}

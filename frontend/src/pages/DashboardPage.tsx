@@ -59,7 +59,7 @@ export default function DashboardPage() {
             md:shadow-2xl
           "
         >
-          <div className="h-full grid grid-cols-1 md:grid-cols-[320px_1fr]">
+          <div className="h-full grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)]">
             {/*  SIDEBAR (THIS SCROLLS) */}
             <div
               ref={sidebarScrollRef}
@@ -73,7 +73,7 @@ export default function DashboardPage() {
             </div>
 
             {/* DESKTOP CHAT */}
-            <div className="hidden md:flex flex-col min-h-0">
+            <div className="hidden md:flex flex-col min-h-0 w-full">
               {selectedChat ? (
                 <ChatWindow
                   chat={selectedChat}
