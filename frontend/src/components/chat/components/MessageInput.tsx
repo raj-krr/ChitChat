@@ -83,24 +83,27 @@ if (replyTo?._id) form.append("replyTo", replyTo._id);
     }
   };
 
-return (
-  <div className="sticky bottom-0 z-10 bg-white/10 backdrop-blur-xl border-t border-white/20 px-4 py-3">
-
-    {/* 🔹 REPLY PREVIEW (UI ONLY) */}
+  return (
+ <div className="px-0 py-0 ">
+  <div
+    className="
+      bg-white/20 backdrop-blur-md
+      rounded-2xl
+      px-3 py-2
+    "
+  >
+    {/* 🔹 REPLY PREVIEW */}
     {replyTo && (
-      <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/30 text-white text-sm">
+      <div className="mb-1 flex items-center gap-2 px-2 py-1 rounded-lg bg-black/30 text-white text-xs">
         <div className="flex-1 min-w-0">
-          <div className="text-xs opacity-70 truncate">
+          <div className="opacity-70 truncate">
             {replyTo.senderId === user._id ? "You" : replyTo.senderName || "User"}
           </div>
           <div className="truncate">
             {replyTo.text || replyTo.attachment?.name || "Attachment"}
           </div>
         </div>
-        <button
-          onClick={clearReply}
-          className="opacity-70 hover:opacity-100"
-        >
+        <button onClick={clearReply} className="opacity-70 hover:opacity-100">
           <X size={14} />
         </button>
       </div>
@@ -108,20 +111,20 @@ return (
 
     {/* 🔹 FILE PREVIEW */}
     {pendingFile && (
-      <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/20 text-white text-sm">
+      <div className="mb-1 flex items-center gap-2 px-2 py-1 rounded-lg bg-white/20 text-white text-xs">
         <span className="truncate flex-1">{pendingFile.name}</span>
         <button
           onClick={() => setPendingFile(null)}
           className="text-red-400 hover:text-red-300"
         >
-          <X size={16} />
+          <X size={14} />
         </button>
       </div>
     )}
 
     {/* 🔹 INPUT ROW */}
-    <div className="flex items-center gap-2">
-      <label className="cursor-pointer text-white/80 hover:text-white transition shrink-0">
+    <div className="flex items-center gap-2 min-h-[35px]">
+      <label className="cursor-pointer text-white/80 shrink-0">
         <Paperclip size={20} />
         <input
           ref={fileInputRef}
@@ -149,29 +152,26 @@ return (
           }
         }}
         className="
-          flex-1 min-w-0
-          rounded-xl px-4 py-2
-          bg-white/20 text-white
-          outline-none
+          flex-1 bg-transparent text-white text-sm
+          placeholder-white/50 outline-none
         "
         placeholder="Type a message..."
       />
 
       <button
-        onClick={() => send()}
+        onClick={()=>send()}
         disabled={!text.trim() && !pendingFile}
-        className={`
-          shrink-0 p-3 rounded-xl transition
-          ${
-            text.trim() || pendingFile
-              ? "bg-indigo-500 text-white hover:bg-indigo-600"
-              : "bg-gray-400 cursor-not-allowed"
-          }
-        `}
+        className="
+          w-9 h-9 rounded-full
+          flex items-center justify-center
+          bg-indigo-500 text-white
+          shrink-0 disabled:opacity-40
+        "
       >
-        <Send size={18} />
+        <Send size={16} />
       </button>
     </div>
   </div>
+</div>
 );
 }

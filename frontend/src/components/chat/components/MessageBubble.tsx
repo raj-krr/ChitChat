@@ -110,7 +110,7 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
         onContextMenu={handleContextMenu}
         className={`
           w-fit max-w-[80%] px-4 py-2 rounded-2xl text-sm
-          leading-relaxed whitespace-pre-wrap break-words
+          leading-relaxed whitespace-pre-wrap break-words break-all
           backdrop-blur-md
           ${
             isMe
