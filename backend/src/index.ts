@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { initEmailTransporter } from "./libs/emailConfig";
-initEmailTransporter();
 
 import http from "http";
 import app from "./app";
@@ -12,16 +11,14 @@ import { setIO } from "./socketEmitter";
 import mongoDb from "./libs/db";
 
 const port = parseInt(process.env.PORT || "5000", 10);
-const host =
-  process.env.NODE_ENV === "local"
-    ? "127.0.0.1"
-    : "0.0.0.0";
 
 async function startServer() {
   try {
     await mongoDb();
     console.log("MongoDB is connected");
 
+    initEmailTransporter();
+    
     const server = http.createServer(app);
 
     const io = new Server(server, {
@@ -35,8 +32,8 @@ async function startServer() {
     setIO(io);
     initSocket(io);
 
-    server.listen(port, host, () => {
-      console.log(`🚀 Server running on http://${host}:${port}`);
+       server.listen(port, () => {
+      console.log(`🚀 Server running on port ${port}`);
     });
   } catch (err) {
     console.error("❌ Server failed to start", err);
