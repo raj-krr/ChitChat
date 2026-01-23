@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { initEmailTransporter } from "./libs/emailConfig";
+initEmailTransporter();
+
 import http from "http";
 import app from "./app";
 import { Server } from "socket.io";
@@ -10,9 +13,9 @@ import mongoDb from "./libs/db";
 
 const port = parseInt(process.env.PORT || "5000", 10);
 const host =
-  process.env.NODE_ENV === "production"
-    ? "0.0.0.0"
-    : "127.0.0.1";
+  process.env.NODE_ENV === "local"
+    ? "127.0.0.1"
+    : "0.0.0.0";
 
 async function startServer() {
   try {
