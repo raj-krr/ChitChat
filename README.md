@@ -112,8 +112,9 @@ npm run dev
 - ✅ Core real-time messaging  
 - ✅ Message pagination & UI optimization  
 - ✅Delivery/read receipts 
-- 🚧 Media handling improvements (planned)  
-- 🚧 AI-assisted features (planned)  
+- ✅Media handling improvements 
+- ✅AI-assistence
+- 🚧Audio and video chat
 
 ---
 
