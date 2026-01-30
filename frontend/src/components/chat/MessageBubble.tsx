@@ -1,11 +1,11 @@
 import React from "react";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useState, useRef } from "react";
 import {
   deleteMessageForEveryoneApi,
   deleteMessageForMeApi,
   messageReactionApi,
-} from "../../../apis/chat.api";
+} from "../../apis/chat.api";
 import { Paperclip, File, Check, CheckCheck, Clock } from "lucide-react";
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];

@@ -50,8 +50,10 @@ ChitChat follows a client-server architecture with a dedicated real-time layer:
 
 ```txt
 chitchat/
+├── .github/      # GitHub workflows
 ├── frontend/     # Client-side application (React + Vite)
 ├── backend/      # Server-side APIs & socket server
+├── docker-compose.yml  # Docker configuration for local development
 └── README.md     # Project overview
 ```
 ## 🛠️ Technology Stack
@@ -128,5 +130,5 @@ Refer to the frontend and backend READMEs for implementation details.
 
 ## 📄 License
 
-MIT License
+This project is intended for learning, portfolio, and development use.
 
