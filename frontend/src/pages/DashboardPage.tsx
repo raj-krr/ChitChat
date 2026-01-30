@@ -14,7 +14,6 @@ export default function DashboardPage() {
   const isMobileChatOpen = Boolean(selectedChat);
 
   const [searchParams, setSearchParams] = useSearchParams();
-
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
   const navVisible = useScrollDirection(sidebarScrollRef);
@@ -30,19 +29,16 @@ export default function DashboardPage() {
   }, [searchParams, setSearchParams]);
 
   return (
-    <div
-      className="
-        min-h-screen relative overflow-hidden
-        bg-gradient-to-b from-indigo-400 via-purple-400 to-pink-400
-        md:bg-gradient-to-br md:from-indigo-500 md:via-purple-500 md:to-pink-500
-        chitchat-bg
-      "
-    >
-      {/* Background grid */}
-      <div className="absolute inset-0 bg-grid pointer-events-none opacity-[0.03] md:opacity-25" />
+    <div className="min-h-screen relative overflow-hidden bg-[#0b0d12]">
+      {/* Background glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/20 blur-[140px]" />
+      <div className="absolute top-40 -right-40 w-[400px] h-[400px] bg-blue-500/20 blur-[140px]" />
+
+      {/* Grid */}
+      <div className="absolute inset-0 bg-grid pointer-events-none opacity-20" />
 
       {/* DESKTOP NAVBAR */}
-      <div className="hidden md:block fixed top-0 left-0 w-full z-[100]">
+      <div className="hidden md:block fixed top-1 left-1/2 -translate-x-1/2 w-[94%] max-w-6xl z-[100]">
         <AppNavbar />
       </div>
 
@@ -50,21 +46,18 @@ export default function DashboardPage() {
         <div
           className="
             max-w-7xl mx-auto
-            h-[calc(100vh-7rem)]
+            h-[calc(100vh-8rem)]
             overflow-hidden
             md:rounded-3xl
-            md:bg-white/10
-            md:backdrop-blur-2xl
-            md:border md:border-white/20
-            md:shadow-2xl
+            bg-[#121520]/90
+            backdrop-blur-xl
+            border border-white/10
+            shadow-2xl shadow-black/40
           "
         >
           <div className="h-full grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)]">
-            {/*  SIDEBAR (THIS SCROLLS) */}
-            <div
-              ref={sidebarScrollRef}
-              className="h-full  min-h-0"
-            >
+            {/* SIDEBAR (SCROLLS) */}
+            <div ref={sidebarScrollRef} className="h-full min-h-0">
               <Sidebar
                 onSelectChat={setSelectedChat}
                 showFriendsPicker={showFriendsPicker}
@@ -89,7 +82,7 @@ export default function DashboardPage() {
 
       {/* MOBILE CHAT FULLSCREEN */}
       {selectedChat && (
-        <div className="md:hidden fixed inset-0 z-[60] bg-gradient-to-b from-indigo-400 via-purple-400 to-pink-500">
+        <div className="md:hidden fixed inset-0 z-[60] bg-[#0b0d12]">
           <ChatWindow
             chat={selectedChat}
             onBack={() => setSelectedChat(null)}

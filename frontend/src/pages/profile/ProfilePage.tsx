@@ -12,63 +12,57 @@ export default function ProfilePage() {
   const navVisible = useScrollDirection();
   const profileState = useProfile();
 
-    const { initializing, profile, handleLogout } = profileState;
+  const { initializing, profile, handleLogout } = profileState;
 
   return (
-    <div
-      className="
-        min-h-screen relative overflow-hidden
-        bg-gradient-to-b from-indigo-400 via-purple-400 to-pink-400
-        md:bg-gradient-to-br md:from-indigo-500 md:via-purple-500 md:to-pink-500
-        chitchat-bg
-      "
-    >
-      {/* BACKGROUND GRID */}
-      <div
-        className="
-          absolute inset-0 bg-grid pointer-events-none
-          opacity-[0.03] md:opacity-25
-        "
-      />
+    <div className="min-h-screen relative overflow-hidden bg-[#0b0d12]">
+      {/* Background glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/20 blur-[140px]" />
+      <div className="absolute top-40 -right-40 w-[400px] h-[400px] bg-blue-500/20 blur-[140px]" />
 
-      {/* TOP LOADER (NON-BLOCKING) */}
+      {/* Background grid */}
+      <div className="absolute inset-0 bg-grid pointer-events-none opacity-20" />
+
+      {/* TOP LOADER */}
       {initializing && <TopLoader />}
 
       {/* DESKTOP NAVBAR */}
-      <div className="hidden md:block fixed top-0 left-0 w-full z-[100]">
+      <div className="hidden md:block fixed top-1 left-1/2 -translate-x-1/2 w-[94%] max-w-6xl z-[100]">
         <AppNavbar active="profile" />
       </div>
 
       {/* MOBILE HEADER */}
-    <div className="md:hidden flex items-center justify-between px-4 py-4 text-white">
-  <div className="flex items-center gap-3">
-    <button onClick={() => navigate(-1)}>
-      <ArrowLeft />
-    </button>
-    <h1 className="text-lg font-semibold">Profile</h1>
-  </div>
+      <div className="md:hidden flex items-center justify-between px-4 py-4 text-white relative z-10">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full hover:bg-white/10 active:scale-95 transition"
+          >
+            <ArrowLeft />
+          </button>
+          <h1 className="text-lg font-semibold">Profile</h1>
+        </div>
 
-  {/* MOBILE LOGOUT ICON */}
-  <button
-    onClick={handleLogout}
-    className="p-2 rounded-full bg-white/20 active:scale-95"
-    title="Logout"
-  >
-    <LogOut size={20} />
-  </button>
+        <button
+          onClick={handleLogout}
+          className="p-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition"
+          title="Logout"
+        >
+          <LogOut size={20} />
+        </button>
+      </div>
+
+     {/* MAIN CONTENT */}
+<div className="relative z-10 px-4 md:pt-24">
+  {profile ? (
+      <ProfileView {...profileState} />
+  ) : (
+    <div className="text-white/60 text-center mt-20">
+      Loading profile…
+    </div>
+  )}
 </div>
 
-
-      {/* MAIN CONTENT */}
-      <div className="relative z-10 px-4 md:mt-24">
-        {profile ? (
-          <ProfileView {...profileState} />
-        ) : (
-          <div className="text-white text-center mt-20 opacity-70">
-            Loading profile…
-          </div>
-        )}
-      </div>
 
       {/* MOBILE BOTTOM NAV */}
       <div className="md:hidden">

@@ -9,8 +9,9 @@ const usernameRegex = /^[a-zA-Z0-9._-]+$/;
 export default function ForgotPassword() {
   const [identifier, setIdentifier] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const validateIdentifier = () => {
     setError("");
@@ -47,89 +48,87 @@ export default function ForgotPassword() {
       setLoading(true);
       await forgotPasswordApi({ identifier });
 
-      navigate("/reset-password?identifier=" + encodeURIComponent(identifier));
+      navigate(
+        "/reset-password?identifier=" + encodeURIComponent(identifier)
+      );
     } catch (err: any) {
-      setError(err.response?.data?.msg || "Error sending OTP");
+      setError(err?.response?.data?.msg || "Error sending OTP");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="
-        min-h-screen flex items-center justify-center
-        bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
-        chitchat-bg
-        p-6 relative overflow-hidden
-      "
-    >
-      {/* Background grid */}
-      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#0b0d12] p-6 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/20 blur-[140px]" />
+      <div className="absolute top-40 -right-40 w-[400px] h-[400px] bg-blue-500/20 blur-[140px]" />
 
-      {/* Glass card */}
+      {/* Grid */}
+      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none" />
+
+      {/* Card */}
       <div
         className="
-          w-full max-w-lg rounded-3xl p-8
-          backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl 
-          fade-in glow-hover tilt-hover
+          w-full max-w-md sm:max-w-lg
+          rounded-3xl p-8
+          bg-[#121520]/90 backdrop-blur-xl
+          border border-white/10
+          shadow-2xl shadow-black/40
+          fade-in
           relative z-10
           flex flex-col gap-6
         "
       >
-        <h1
-          className="
-            text-4xl sm:text-5xl font-extrabold text-indigo-900 text-center
-            drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]
-          "
-        >
-          Forgot Password 
+        {/* Title */}
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-white text-center">
+          Forgot Password
         </h1>
 
-        <Text className="text-center text-gray-900">
-          Enter your <b>email or username</b> to receive an OTP.
+        <Text className="text-center text-white/60">
+          Enter your <b>email or username</b> to receive a one-time code.
         </Text>
 
-        <div className="flex flex-col">
-          <TextInput
-            label="Email or Username"
-            placeholder="your@email.com or username"
-            radius="md"
-            size="md"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            error={error ? <span className="text-red-600 text-sm">{error}</span> : null}
-            className={
-              error
-                ? "input-error"
-                : identifier && !error
-                ? "input-valid"
-                : ""
-            }
-          />
-        </div>
+        {/* Input */}
+        <TextInput
+          label="Email or Username"
+          placeholder="your@email.com or username"
+          radius="md"
+          size="md"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          error={error}
+          classNames={{
+            input:
+              "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+            label: "text-white/70",
+          }}
+        />
 
+        {/* Submit */}
         <Button
           size="lg"
           radius="lg"
-          color="indigo"
           fullWidth
-          onClick={handleForgot}
           loading={loading}
           disabled={loading}
+          onClick={handleForgot}
           className="
-            transition-all duration-300 
-            hover:shadow-xl hover:-translate-y-1 
-            transform-gpu
+            bg-indigo-600 hover:bg-indigo-500
+            text-white
+            transition-all
+            hover:-translate-y-0.5
+            hover:shadow-xl hover:shadow-indigo-600/30
           "
         >
           Send OTP
         </Button>
 
-        <Text className="text-center text-sm text-gray-800">
+        {/* Bottom link */}
+        <Text className="text-center text-sm text-white/60">
           Remember your password?{" "}
           <button
-            className="text-indigo-900 font-semibold underline hover:opacity-80"
+            className="text-indigo-400 font-semibold underline hover:text-indigo-300"
             onClick={() => navigate("/login")}
           >
             Login

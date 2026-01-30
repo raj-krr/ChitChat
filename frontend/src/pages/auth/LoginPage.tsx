@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { Button, TextInput, PasswordInput, Group, Text } from "@mantine/core";
+import {
+  Button,
+  TextInput,
+  PasswordInput,
+  Group,
+  Text,
+} from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../../apis/auth.api";
 import { useAuth } from "../../context/AuthContext";
-
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernameRegex = /^[a-zA-Z0-9._-]+$/;
@@ -11,6 +16,7 @@ const passwordRegex = /^[\x20-\x7E]+$/;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -55,14 +61,13 @@ export default function LoginPage() {
 
     return isValid;
   };
-const { refreshAuth } = useAuth();
+
   const handleLogin = async () => {
- 
     if (!validateInputs()) return;
 
     try {
       await loginApi({ identifier, password });
-         await refreshAuth();
+      await refreshAuth();
     } catch (err: any) {
       const msg = err.response?.data?.msg;
 
@@ -70,44 +75,42 @@ const { refreshAuth } = useAuth();
         setPasswordError("Incorrect password");
       } else if (msg === "User not found") {
         setIdentifierError("No user exists with this identifier");
-      } else if (msg?.includes("email not verified yet")) {
-        setPasswordError("Email not verified yet.");
+      } else if (msg?.includes("email not verified")) {
+        setPasswordError("Email not verified yet");
       }
     }
   };
 
   return (
-    <div
-      className="
-        min-h-screen flex items-center justify-center 
-        bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
-        chitchat-bg
-        p-6 relative overflow-hidden
-      "
-    >
-      {/* Background grid */}
-      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#0b0d12] p-6 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/20 blur-[140px]" />
+      <div className="absolute top-40 -right-40 w-[400px] h-[400px] bg-blue-500/20 blur-[140px]" />
 
-      {/* Glass Login Card */}
+      {/* Grid */}
+      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none" />
+
+      {/* Login Card */}
       <div
         className="
-          w-full max-w-lg rounded-3xl p-8
-          backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl
-          fade-in glow-hover tilt-hover
+          w-full max-w-md sm:max-w-lg
+          rounded-3xl p-8
+          bg-[#121520]/90 backdrop-blur-xl
+          border border-white/10
+          shadow-2xl shadow-black/40
+          fade-in
           relative z-10
         "
       >
         {/* Title */}
-        <h1
-          className="
-            mb-6 text-4xl sm:text-5xl font-extrabold text-indigo-900 text-center
-            drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]
-          "
-        >
-          Welcome Back 
+        <h1 className="mb-2 text-4xl sm:text-5xl font-extrabold text-white text-center">
+          Welcome Back
         </h1>
+        <p className="text-white/60 text-center mb-8">
+          Continue chatting without distractions
+        </p>
 
-        {/* Input Fields */}
+        {/* Inputs */}
         <div className="space-y-4">
           <TextInput
             label="Email or Username"
@@ -119,20 +122,12 @@ const { refreshAuth } = useAuth();
               const val = e.target.value;
               if (val.length <= 50) setIdentifier(val);
             }}
-            error={
-              identifierError && (
-                <span className="text-red-600 text-sm error-fade">
-                  {identifierError}
-                </span>
-              )
-            }
-            className={
-              identifierError
-                ? "input-error"
-                : identifier && !identifierError
-                ? "input-valid"
-                : ""
-            }
+            error={identifierError}
+            classNames={{
+              input:
+                "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+              label: "text-white/70",
+            }}
           />
 
           <PasswordInput
@@ -145,20 +140,12 @@ const { refreshAuth } = useAuth();
               const val = e.target.value;
               if (val.length <= 20) setPassword(val);
             }}
-            error={
-              passwordError && (
-                <span className="text-red-600 text-sm error-fade">
-                  {passwordError}
-                </span>
-              )
-            }
-            className={
-              passwordError
-                ? "input-error"
-                : password && !passwordError
-                ? "input-valid"
-                : ""
-            }
+            error={passwordError}
+            classNames={{
+              input:
+                "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+              label: "text-white/70",
+            }}
           />
         </div>
 
@@ -167,10 +154,12 @@ const { refreshAuth } = useAuth();
           <Button
             size="lg"
             radius="lg"
-            color="indigo"
             className="
-              transition-all duration-300 
-              hover:shadow-xl hover:-translate-y-1 transform-gpu
+              bg-indigo-600 hover:bg-indigo-500
+              text-white
+              transition-all
+              hover:-translate-y-0.5
+              hover:shadow-xl hover:shadow-indigo-600/30
             "
             onClick={handleLogin}
           >
@@ -179,20 +168,20 @@ const { refreshAuth } = useAuth();
         </Group>
 
         {/* Links */}
-        <div className="mt-5 text-center text-sm text-gray-800">
+        <div className="mt-6 text-center text-sm text-white/60">
           <button
-            className="underline hover:text-indigo-900 transition"
+            className="underline hover:text-white transition"
             onClick={() => navigate("/forgot-password")}
           >
             Forgot Password?
           </button>
 
-          <div className="mt-2">
-            <Text>
+          <div className="mt-3">
+            <Text className="text-white/60">
               Don’t have an account?{" "}
               <button
                 onClick={() => navigate("/register")}
-                className="text-indigo-900 font-semibold underline hover:opacity-80"
+                className="text-indigo-400 font-semibold underline hover:text-indigo-300"
               >
                 Create one
               </button>

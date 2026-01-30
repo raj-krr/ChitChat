@@ -14,7 +14,18 @@ export default function HomePage() {
     <div className="bg-[#0b0d12] text-white min-h-screen overflow-x-hidden">
 
       {/* ================= NAVBAR ================= */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-[#0b0d12]/80 backdrop-blur border-b border-white/10">
+      <header
+  className="
+    fixed top-4 left-1/2 -translate-x-1/2
+    w-[94%] max-w-6xl
+    z-50
+    bg-[#0b0d12]/80 backdrop-blur-xl
+    border border-white/10
+    shadow-xl shadow-black/30
+    rounded-2xl
+  "
+>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
           <h1
             className="text-lg sm:text-xl font-bold tracking-wide cursor-pointer"

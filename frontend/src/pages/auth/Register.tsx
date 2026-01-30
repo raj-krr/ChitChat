@@ -27,7 +27,6 @@ export default function RegisterPage() {
     setEmailError("");
     setPasswordError("");
 
-    // Username
     if (!username.trim()) {
       setUsernameError("Username is required");
       ok = false;
@@ -42,7 +41,6 @@ export default function RegisterPage() {
       ok = false;
     }
 
-    // Email
     if (!email.trim()) {
       setEmailError("Email is required");
       ok = false;
@@ -54,7 +52,6 @@ export default function RegisterPage() {
       ok = false;
     }
 
-    // Password
     if (!password.trim()) {
       setPasswordError("Password is required");
       ok = false;
@@ -100,42 +97,37 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      className="
-        min-h-screen flex items-center justify-center 
-        bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
-        chitchat-bg
-        p-6 relative overflow-hidden
-      "
-    >
-      {/* Background Grid */}
-      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#0b0d12] p-6 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/20 blur-[140px]" />
+      <div className="absolute top-40 -right-40 w-[400px] h-[400px] bg-blue-500/20 blur-[140px]" />
 
-      {/* Glass Card */}
+      {/* Grid */}
+      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none" />
+
+      {/* Register Card */}
       <div
         className="
-          w-full max-w-lg rounded-3xl p-8
-          backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl
-          fade-in glow-hover tilt-hover
-          relative z-10 flex flex-col gap-6
+          w-full max-w-md sm:max-w-lg
+          rounded-3xl p-8
+          bg-[#121520]/90 backdrop-blur-xl
+          border border-white/10
+          shadow-2xl shadow-black/40
+          fade-in
+          relative z-10
+          flex flex-col gap-6
         "
       >
-        <h1
-          className="
-            text-4xl sm:text-5xl font-extrabold text-indigo-900 text-center
-            drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]
-          "
-        >
+        {/* Title */}
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-white text-center">
           Create Account
         </h1>
-{/* 
-        <Text className="text-center text-gray-900 mb-2">
-          Join ChitChat — fast, modern & beautiful.
-        </Text> */}
+        <p className="text-white/60 text-center">
+          Join ChitChat and start clean conversations
+        </p>
 
-        {/* INPUTS */}
+        {/* Inputs */}
         <div className="space-y-4">
-          {/* Username */}
           <TextInput
             label="Username"
             placeholder="your_username"
@@ -146,23 +138,14 @@ export default function RegisterPage() {
               const v = e.target.value;
               if (v.length <= 30) setUsername(v);
             }}
-            error={
-              usernameError && (
-                <span className="text-red-600 text-sm error-fade">
-                  {usernameError}
-                </span>
-              )
-            }
-            className={
-              usernameError
-                ? "input-error"
-                : username && !usernameError
-                ? "input-valid"
-                : ""
-            }
+            error={usernameError}
+            classNames={{
+              input:
+                "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+              label: "text-white/70",
+            }}
           />
 
-          {/* Email */}
           <TextInput
             label="Email"
             placeholder="you@example.com"
@@ -173,19 +156,14 @@ export default function RegisterPage() {
               const v = e.target.value;
               if (v.length <= 100) setEmail(v);
             }}
-            error={
-              emailError && (
-                <span className="text-red-600 text-sm error-fade">
-                  {emailError}
-                </span>
-              )
-            }
-            className={
-              emailError ? "input-error" : email && !emailError ? "input-valid" : ""
-            }
+            error={emailError}
+            classNames={{
+              input:
+                "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+              label: "text-white/70",
+            }}
           />
 
-          {/* Password */}
           <PasswordInput
             label="Password"
             placeholder="Create a password"
@@ -196,20 +174,12 @@ export default function RegisterPage() {
               const v = e.target.value;
               if (v.length <= 20) setPassword(v);
             }}
-            error={
-              passwordError && (
-                <span className="text-red-600 text-sm error-fade">
-                  {passwordError}
-                </span>
-              )
-            }
-            className={
-              passwordError
-                ? "input-error"
-                : password && !passwordError
-                ? "input-valid"
-                : ""
-            }
+            error={passwordError}
+            classNames={{
+              input:
+                "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+              label: "text-white/70",
+            }}
           />
         </div>
 
@@ -217,21 +187,26 @@ export default function RegisterPage() {
         <Button
           size="lg"
           radius="lg"
-          color="indigo"
           fullWidth
-          onClick={handleRegister}
           loading={loading}
           disabled={loading}
-          className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          onClick={handleRegister}
+          className="
+            bg-indigo-600 hover:bg-indigo-500
+            text-white
+            transition-all
+            hover:-translate-y-0.5
+            hover:shadow-xl hover:shadow-indigo-600/30
+          "
         >
           Create Account
         </Button>
 
         {/* Bottom link */}
-        <Text className="text-center text-sm text-gray-800">
+        <Text className="text-center text-sm text-white/60">
           Already have an account?{" "}
           <button
-            className="text-indigo-900 font-semibold underline hover:opacity-80"
+            className="text-indigo-400 font-semibold underline hover:text-indigo-300"
             onClick={() => navigate("/login")}
           >
             Login

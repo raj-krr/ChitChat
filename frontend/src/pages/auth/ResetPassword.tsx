@@ -14,41 +14,40 @@ export default function ResetPassword() {
 
   const [otpError, setOtpError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
   const [newPassword, setNewPassword] = useState("");
 
   const [timer, setTimer] = useState(30);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  // ---------------- TIMER ----------------
+  /* ---------------- TIMER ---------------- */
   useEffect(() => {
     if (timer === 0) return;
     const interval = setInterval(() => setTimer((t) => t - 1), 1000);
     return () => clearInterval(interval);
   }, [timer]);
 
-  // ---------------- OTP CHANGE ----------------
+  /* ---------------- OTP CHANGE ---------------- */
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
 
-    const newOtp = [...otpDigits];
-    newOtp[index] = value.slice(-1);
-    setOtpDigits(newOtp);
+    const next = [...otpDigits];
+    next[index] = value.slice(-1);
+    setOtpDigits(next);
 
-    if (value !== "" && index < 5) inputRefs.current[index + 1]?.focus();
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
   const handleBackspace = (index: number, value: string) => {
     if (value === "" && index > 0) {
-      const newOtp = [...otpDigits];
-      newOtp[index - 1] = "";
-      setOtpDigits(newOtp);
+      const next = [...otpDigits];
+      next[index - 1] = "";
+      setOtpDigits(next);
       inputRefs.current[index - 1]?.focus();
     }
   };
 
-  // ---------------- OTP PASTE ----------------
+  /* ---------------- OTP PASTE ---------------- */
   const handlePasteOtp = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     const paste = e.clipboardData.getData("text").trim();
@@ -58,15 +57,13 @@ export default function ResetPassword() {
     inputRefs.current[5]?.focus();
   };
 
-  // ---------------- VALIDATION ----------------
+  /* ---------------- VALIDATION ---------------- */
   const validateInputs = () => {
     let ok = true;
     setOtpError("");
     setPasswordError("");
 
-    const otpStr = otpDigits.join("");
-
-    if (otpStr.length !== 6) {
+    if (otpDigits.join("").length !== 6) {
       setOtpError("OTP must be 6 digits");
       ok = false;
     }
@@ -82,7 +79,7 @@ export default function ResetPassword() {
     return ok;
   };
 
-  // ---------------- SUBMIT RESET ----------------
+  /* ---------------- RESET ---------------- */
   const handleReset = async () => {
     if (!validateInputs()) return;
 
@@ -96,14 +93,13 @@ export default function ResetPassword() {
 
       navigate("/login");
     } catch (err: any) {
-      const msg = err.response?.data?.msg || "Reset failed";
-      setPasswordError(msg);
+      setPasswordError(err?.response?.data?.msg || "Reset failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // ---------------- RESEND OTP ----------------
+  /* ---------------- RESEND ---------------- */
   const handleResend = async () => {
     setOtpError("");
     try {
@@ -118,54 +114,47 @@ export default function ResetPassword() {
   };
 
   return (
-    <div
-      className="
-        min-h-screen flex items-center justify-center 
-        bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500
-        chitchat-bg
-        p-4 sm:p-6 relative overflow-hidden
-      "
-    >
-      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#0b0d12] p-6 relative overflow-hidden">
+      {/* Glow */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/20 blur-[140px]" />
+      <div className="absolute top-40 -right-40 w-[400px] h-[400px] bg-blue-500/20 blur-[140px]" />
 
-      {/* CARD */}
+      {/* Grid */}
+      <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none" />
+
+      {/* Card */}
       <div
         className="
-          w-full max-w-lg rounded-3xl p-6 sm:p-8
-          backdrop-blur-2xl bg-white/30 border border-white/40 shadow-xl
-          fade-in glow-hover tilt-hover
-          relative z-10 flex flex-col gap-6
+          w-full max-w-md sm:max-w-lg
+          rounded-3xl p-8
+          bg-[#121520]/90 backdrop-blur-xl
+          border border-white/10
+          shadow-2xl shadow-black/40
+          fade-in
+          relative z-10
+          flex flex-col gap-6
         "
       >
-        <h1
-          className="
-            text-3xl sm:text-5xl font-extrabold text-indigo-900 text-center
-            drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]
-          "
-        >
+        {/* Title */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-white text-center">
           Reset Password
         </h1>
 
-        <Text className="text-center text-gray-900 text-sm sm:text-base">
-          OTP has been sent to <b>{identifier}</b>
+        <Text className="text-center text-white/60">
+          OTP sent to <b>{identifier}</b>
         </Text>
 
-        {/* OTP SECTION */}
-        <div className="flex flex-col items-center gap-3 sm:gap-4">
-          <label className="text-sm font-semibold text-gray-900">
+        {/* OTP */}
+        <div className="flex flex-col items-center gap-4" onPaste={handlePasteOtp}>
+          <label className="text-sm font-semibold text-white/70">
             Enter OTP
           </label>
 
-          <div
-            className="flex gap-2 sm:gap-3 justify-center"
-            onPaste={handlePasteOtp}
-          >
+          <div className="flex gap-2 sm:gap-3">
             {otpDigits.map((digit, i) => (
               <input
-  key={i}
-  ref={(el) => {
-    inputRefs.current[i] = el; // FIXED: no returned value
-  }}
+                key={i}
+                ref={(el) => { inputRefs.current[i] = el }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -173,8 +162,12 @@ export default function ResetPassword() {
                 className="
                   w-10 h-12 sm:w-14 sm:h-16
                   text-center text-xl sm:text-2xl font-semibold
-                  rounded-xl bg-white/40 backdrop-blur border border-white/60
-                  focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500
+                  rounded-xl
+                  bg-[#0b0d12]
+                  border border-white/10
+                  text-white
+                  focus:border-indigo-500
+                  focus:ring-2 focus:ring-indigo-500/40
                   transition-all
                 "
                 onChange={(e) => handleOtpChange(i, e.target.value)}
@@ -185,20 +178,17 @@ export default function ResetPassword() {
             ))}
           </div>
 
-          <div className="min-h-[18px]">
-            {otpError && <span className="text-red-600 text-sm">{otpError}</span>}
-          </div>
+          {otpError && <span className="text-red-500 text-sm">{otpError}</span>}
 
-          {/* RESEND TEXT */}
-          <Text className="text-sm text-gray-900">
+          <Text className="text-sm text-white/60">
             Didn’t receive OTP?{" "}
             {timer > 0 ? (
-              <span className="font-semibold text-indigo-900">
+              <span className="font-semibold text-indigo-400">
                 Resend in {timer}s
               </span>
             ) : (
               <button
-                className="font-semibold text-indigo-900 underline disabled:opacity-50"
+                className="font-semibold text-indigo-400 underline disabled:opacity-50"
                 onClick={handleResend}
                 disabled={resendLoading}
               >
@@ -208,7 +198,7 @@ export default function ResetPassword() {
           </Text>
         </div>
 
-        {/* NEW PASSWORD FIELD */}
+        {/* New Password */}
         <PasswordInput
           label="New Password"
           placeholder="Enter new password"
@@ -216,33 +206,36 @@ export default function ResetPassword() {
           size="md"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          error={passwordError && <span className="text-red-600">{passwordError}</span>}
-          className={
-            passwordError
-              ? "input-error"
-              : newPassword && !passwordError
-              ? "input-valid"
-              : ""
-          }
+          error={passwordError}
+          classNames={{
+            input:
+              "bg-[#0b0d12] border-white/10 text-white placeholder:text-white/40",
+            label: "text-white/70",
+          }}
         />
 
-        {/* RESET BUTTON */}
+        {/* Submit */}
         <Button
           size="lg"
           radius="lg"
-          color="indigo"
           fullWidth
-          onClick={handleReset}
           loading={loading}
-          className="transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+          onClick={handleReset}
+          className="
+            bg-indigo-600 hover:bg-indigo-500
+            text-white
+            transition-all
+            hover:-translate-y-0.5
+            hover:shadow-xl hover:shadow-indigo-600/30
+          "
         >
           Reset Password
         </Button>
 
-        <Text className="text-center text-sm text-gray-800">
+        <Text className="text-center text-sm text-white/60">
           Back to{" "}
           <button
-            className="text-indigo-900 font-semibold underline hover:opacity-80"
+            className="text-indigo-400 font-semibold underline hover:text-indigo-300"
             onClick={() => navigate("/login")}
           >
             Login
