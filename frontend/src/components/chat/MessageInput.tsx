@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { sendMessageApi } from "../../../apis/chat.api";
-import { socket } from "../../../apis/socket";
-import { useAuth } from "../../../context/AuthContext";
+import { sendMessageApi } from "../../apis/chat.api";
+import { socket } from "../../apis/socket";
+import { useAuth } from "../../context/AuthContext";
 import { Paperclip, Send, X } from "lucide-react";
 
 export default function MessageInput({ chatId, receiverId, onLocalSend,replyTo,

@@ -1,11 +1,11 @@
 import ChatHeader from "./ChatHeader";
-import MessageBubble from "../components/MessageBubble";
-import MessageInput from "../components/MessageInput";
-import { useAuth } from "../../../context/AuthContext";
+import MessageBubble from "./MessageBubble";
+import MessageInput from "./MessageInput";
+import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 
-import { useChatMessages } from "../hooks/useChatMessages";
-import { useChatSocket } from "../hooks/useChatSocket";
+import { useChatMessages } from "./hooks/useChatMessages";
+import { useChatSocket } from "./hooks/useChatSocket";
 
 const safeDate = (date?: string) => {
   if (!date) return null;

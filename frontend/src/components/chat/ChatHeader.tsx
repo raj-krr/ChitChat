@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { usePresence } from "../../../context/PresenceContext";
+import { usePresence } from "../../context/PresenceContext";
 
 export default function ChatHeader({ user, onBack }: any) {
   const { onlineUsers, lastSeen } = usePresence();
