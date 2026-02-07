@@ -114,7 +114,7 @@ npm run dev
 - ✅Delivery/read receipts 
 - ✅Media handling improvements 
 - ✅AI-assistence
-- 🚧Audio and video chat 
+- 🚧Audio and video chat  
 
 ---
 
