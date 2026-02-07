@@ -164,16 +164,35 @@ export default function HomePage() {
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
-          {[
-            ["Instant Messaging", "Messages delivered without delay."],
-            ["Message Replies", "Reply to specific messages easily."],
-            ["Attachments", "Share files and media in chat."],
-            ["Organized Chats", "Messages grouped by date."],
-            ["Smooth Scrolling", "Older messages load naturally."],
-            ["Clean Dark UI", "Comfortable day and night."],
-          ].map(([title, desc]) => (
-            <Feature key={title} title={title} desc={desc} />
-          ))}
+         {[
+  [
+    "Instant Messaging",
+    "Send and receive messages instantly, without waiting or refreshing."
+  ],
+  [
+    "Reply to Messages",
+    "Reply to specific messages so conversations stay clear and easy to follow."
+  ],
+  [
+    "Share Photos & Files",
+    "Send images and files effortlessly, right inside the chat."
+  ],
+  [
+    "Clean, Organized Chats",
+    "Messages are neatly grouped by date, so nothing feels messy."
+  ],
+  [
+    "Smooth Scrolling",
+    "Scroll naturally through older messages without sudden jumps."
+  ],
+  [
+    "AI Chat Assistance",
+    "Get smart reply suggestions, improve your messages, or chat with an AI assistant anytime."
+  ],
+].map(([title, desc]) => (
+  <Feature key={title} title={title} desc={desc} />
+))}
+
         </div>
       </section>
 

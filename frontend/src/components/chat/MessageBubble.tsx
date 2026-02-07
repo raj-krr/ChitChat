@@ -101,7 +101,7 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
   return (
     <div
       data-msg-id={msg._id ?? msg.clientId}
-      className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}
+      className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2 sm:mb-3`}
       onClick={() => setShowActions(false)}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -109,9 +109,10 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
       <div
         onContextMenu={handleContextMenu}
         className={`
-          inline-block max-w-[calc(100%-3rem)]
+          inline-block max-w-[85%] sm:max-w-[80%] lg:max-w-[65%] xl:max-w-[55%]
           px-4 py-1.5 rounded-2xl text-sm
-          leading-relaxed whitespace-pre-wrap break-words 
+          leading-relaxed sm:leading-loose
+          whitespace-pre-wrap break-words 
           backdrop-blur-md
           ${
             isMe
