@@ -42,11 +42,11 @@ export default function DashboardPage() {
         <AppNavbar />
       </div>
 
-      <div className="md:pt-24 relative z-10">
+      <div className="relative z-10 md:pt-24">
         <div
           className="
             max-w-7xl mx-auto
-            h-[calc(100vh-8rem)]
+            h-[calc(100vh)] md:h-[calc(100vh-8rem)]
             overflow-hidden
             md:rounded-3xl
             bg-[#121520]/90
