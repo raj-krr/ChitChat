@@ -1,11 +1,11 @@
 import React from "react";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useState, useRef } from "react";
 import {
   deleteMessageForEveryoneApi,
   deleteMessageForMeApi,
   messageReactionApi,
-} from "../../../apis/chat.api";
+} from "../../apis/chat.api";
 import { Paperclip, File, Check, CheckCheck, Clock } from "lucide-react";
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
@@ -101,7 +101,7 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
   return (
     <div
       data-msg-id={msg._id ?? msg.clientId}
-      className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}
+      className={`flex w-full min-w-0 ${isMe ? "justify-end" : "justify-start"} mb-1`}
       onClick={() => setShowActions(false)}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -109,8 +109,9 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
       <div
         onContextMenu={handleContextMenu}
         className={`
-          w-fit max-w-[80%] px-4 py-2 rounded-2xl text-sm
-          leading-relaxed whitespace-pre-wrap break-words break-all
+          relative
+          w-fit min-w-0 max-w-[80%] px-4 py-2 rounded-2xl text-sm
+          leading-relaxed whitespace-pre-wrap break-words 
           backdrop-blur-md
           ${
             isMe
@@ -212,38 +213,32 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
             )}
 
             {/* TEXT (only if meaningful) */}
-            {msg.text?.trim() && (
-              <div className="flex items-end gap-2">
-                {/* MESSAGE TEXT */}
-                <span className="whitespace-pre-wrap break-words">
-                  {msg.text}
-                </span>
+          {msg.text?.trim() && (
+  <div className="whitespace-pre-wrap break-words ">
+    {msg.text}
 
-                {/* TIME + READ STATUS */}
-                <span className="flex items-center gap-1 text-[10px] opacity-60 shrink-0">
-                  {msg.createdAt &&
-                    new Date(msg.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+    <span className="ml-2 inline-flex items-center gap-1 text-[10px] opacity-60 align-bottom">
+      {msg.createdAt &&
+        new Date(msg.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
 
-                  {isMe && (
-                    <>
-                      {msg.status === "sending" && <Clock size={12} />}
-                      {msg.status === "sent" && !msg.isRead && (
-                        <Check size={14} />
-                      )}
-                      {msg.status === "delivered" && !msg.isRead && (
-                        <CheckCheck size={14} />
-                      )}
-                      {msg.isRead && (
-                        <CheckCheck size={14} className="text-blue-400" />
-                      )}
-                    </>
-                  )}
-                </span>
-              </div>
-            )}
+      {isMe && (
+        <>
+          {msg.status === "sending" && <Clock size={12} />}
+          {msg.status === "sent" && !msg.isRead && <Check size={14} />}
+          {msg.status === "delivered" && !msg.isRead && (
+            <CheckCheck size={14} />
+          )}
+          {msg.isRead && (
+            <CheckCheck size={14} className="text-blue-400" />
+          )}
+        </>
+      )}
+    </span>
+  </div>
+)}
 
             {fileType === "image" && previewUrl && (
               <img

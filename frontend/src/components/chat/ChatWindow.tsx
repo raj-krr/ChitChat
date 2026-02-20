@@ -1,11 +1,11 @@
 import ChatHeader from "./ChatHeader";
-import MessageBubble from "../components/MessageBubble";
-import MessageInput from "../components/MessageInput";
-import { useAuth } from "../../../context/AuthContext";
+import MessageBubble from "./MessageBubble";
+import MessageInput from "./MessageInput";
+import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 
-import { useChatMessages } from "../hooks/useChatMessages";
-import { useChatSocket } from "../hooks/useChatSocket";
+import { useChatMessages } from "./hooks/useChatMessages";
+import { useChatSocket } from "./hooks/useChatSocket";
 
 const safeDate = (date?: string) => {
   if (!date) return null;
@@ -147,7 +147,7 @@ const scrollToMessage = async (messageId: string) => {
         ref={containerRef}
         onScroll={handleScroll}
         className="
-  flex-1 overflow-y-auto px-4 pt-3
+  flex-1 overflow-y-auto px-2 pt-3
   bg-white/10 backdrop-blur-xl
 "
       >

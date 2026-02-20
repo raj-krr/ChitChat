@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import Sidebar from "../components/dashboard/Sidebar";
-import ChatWindow from "../components/chat/components/ChatWindow";
+import ChatWindow from "../components/chat/ChatWindow";
 import EmptyState from "../components/dashboard/EmptyState";
 import AppNavbar from "../components/layout/AppNavbar";
 import MobileBottomNav from "../components/layout/MobileBottomNav";

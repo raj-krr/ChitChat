@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { sendMessageApi } from "../../../apis/chat.api";
-import { socket } from "../../../apis/socket";
-import { useAuth } from "../../../context/AuthContext";
+import { sendMessageApi } from "../../apis/chat.api";
+import { socket } from "../../apis/socket";
+import { useAuth } from "../../context/AuthContext";
 import { Paperclip, Send, X, Smile } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 
