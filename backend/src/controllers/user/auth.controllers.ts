@@ -32,13 +32,13 @@ import  jwt from "jsonwebtoken";
         }
       
     } catch (error) {
-        return res.status(500).json({ success: false, msg: "server error" })
+        return res.status(500).json({ success: false, msg: "server error" ,error:error})
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const verificationCode = generateCode(6);
-    const verificationCodeExpires = new Date(Date.now() + 5 * 60 * 60);
+    const verificationCodeExpires = new Date(Date.now() + 5 * 60 * 1000);
         
     let user = await UserMOdel.findOne({ email: email, isVerified: false });
         
