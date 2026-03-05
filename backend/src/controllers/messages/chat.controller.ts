@@ -207,22 +207,31 @@ export const sendMessages = async (req: Request, res: Response) => {
   receiver._id.toString()
 );
 
-    const allowedMimesTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-      "image/svg+xml",
-      "video/mp4",
-      "video/mpeg",
-      "video/quicktime",
-      "video/x-matroska",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ];
+const allowedMimesTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+  "video/mp4",
+  "video/mpeg",
+  "video/quicktime",
+  "video/x-matroska",
+
+  // documents
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+  // 🎤 ADD AUDIO
+  "audio/webm",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/ogg"
+];
 
     let fileUrl: string | undefined;
 

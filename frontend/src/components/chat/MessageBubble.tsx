@@ -239,15 +239,23 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
     </span>
   </div>
 )}
-
-            {fileType === "image" && previewUrl && (
-              <img
-                src={previewUrl}
-                alt="attachment"
-                className="mt-2 max-w-[160px] max-h-[160px] rounded-lg object-cover cursor-pointer"
-                onClick={() => window.open(msg.file || previewUrl, "_blank")}
-              />
-            )}
+{fileType === "image" && previewUrl && (
+  <div
+    className="mt-2 overflow-hidden rounded-xl bg-black/20 cursor-pointer"
+    onClick={() => window.open(msg.file || previewUrl, "_blank")}
+  >
+    <img
+      src={previewUrl}
+      alt="attachment"
+      className="
+        max-w-[260px]
+        max-h-[320px]
+        object-contain
+      "
+      loading="lazy"
+    />
+  </div>
+)}
 
             {/* VIDEO FILE (icon-based, not inline video) */}
             {msg.file && fileType === "video" && (
