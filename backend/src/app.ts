@@ -4,6 +4,7 @@ dotenv.config();
 import express, { Application, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
 
 import authRoutes from "./routes/authRoute";
 import meRoutes from "./routes/meRoutes";
@@ -11,7 +12,7 @@ import messageRoute from "./routes/messageRoute";
 import friendRoute from "./routes/friendRoute";
 import { healthCheck } from "./controllers/health.controller";
 import notificationRoutes from "./routes/notificationRoute";
-
+import { globalLimiter } from "./middlewares/rateLimiter";
 const app: Application = express();
 
 app.use(
@@ -23,6 +24,8 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(helmet());
+app.use(globalLimiter);
 
 app.get("/api/health", healthCheck);
 
