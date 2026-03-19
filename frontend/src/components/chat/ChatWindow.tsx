@@ -10,7 +10,6 @@ import { useChatSocket } from "./hooks/useChatSocket";
 import { useCall } from "../call/hooks/useCall";
 import { useGlobalCall } from "../../context/CallContext";
 import { socket } from "../../apis/socket";
-import CallWindow from "../call/CallWindow";
 
 const safeDate = (date?: string) => {
   if (!date) return null;
