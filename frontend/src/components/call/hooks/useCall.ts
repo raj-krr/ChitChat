@@ -36,26 +36,35 @@ export function useCall() {
         });
       }
     };
+peer.ontrack = (event) => {
+  const stream = event.streams[0];
 
-    peer.ontrack = (event) => {
-      console.log("🎧 TRACK RECEIVED", event.streams);
+  console.log("🎧 TRACK RECEIVED", stream);
+  console.log("🎧 AUDIO TRACKS:", stream.getAudioTracks());
 
-      let audio = document.getElementById("remote-audio") as HTMLAudioElement;
+  if (stream.getAudioTracks().length === 0) {
+    console.log("❌ NO AUDIO TRACK RECEIVED");
+    return;
+  }
 
-      if (!audio) {
-        audio = document.createElement("audio");
-        audio.id = "remote-audio";
-        audio.autoplay = true;
-        (audio as any).playsInline = true;
-        document.body.appendChild(audio);
-      }
+  let audio = document.getElementById("remote-audio") as HTMLAudioElement;
 
-      audio.srcObject = event.streams[0];
+  if (!audio) {
+    audio = document.createElement("audio");
+    audio.id = "remote-audio";
+    audio.autoplay = true;
+    audio.controls = true;
+    document.body.appendChild(audio);
+  }
 
-      audio.play().catch(() => {
-        console.log("🔇 autoplay blocked");
-      });
-    };
+  audio.srcObject = stream;
+
+  setTimeout(() => {
+    audio.play().catch(() => {
+      console.log("🔇 autoplay blocked");
+    });
+  }, 100);
+};
 
     return peer;
   };
@@ -69,9 +78,12 @@ export function useCall() {
 
       const peer = createPeer(to);
       peerRef.current = peer;
-
+console.log(localStreamRef.current?.getAudioTracks());
       stream.getTracks().forEach((t) => peer.addTrack(t, stream));
-
+stream.getAudioTracks().forEach((track) => {
+  track.enabled = true; // 🔥 FORCE ENABLE
+  console.log("🎤 mic track:", track.enabled, track.readyState);
+});
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
 
@@ -83,6 +95,7 @@ export function useCall() {
 
       callSocket.setCallStatus("calling");
       callSocket.setCallUser(user);
+      console.log("🎤 sending tracks:", stream.getTracks());
     } catch (err) {
       console.error("Mic permission denied");
     }
@@ -98,7 +111,10 @@ export function useCall() {
     peerRef.current = peer;
 
     stream.getTracks().forEach((t) => peer.addTrack(t, stream));
-
+stream.getAudioTracks().forEach((track) => {
+  track.enabled = true; // 🔥 FORCE ENABLE
+  console.log("🎤 mic track:", track.enabled, track.readyState);
+});
     await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
     const answer = await peer.createAnswer();
