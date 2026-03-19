@@ -39,32 +39,29 @@ export function useCall() {
 peer.ontrack = (event) => {
   const stream = event.streams[0];
 
-  let video = document.getElementById("remote-video") as HTMLVideoElement;
+  console.log("🎥 TRACK RECEIVED:", stream);
 
-  if (!video) {
-    video = document.createElement("video");
-    video.id = "remote-video";
-    video.autoplay = true;
-    video.playsInline = true;
-    video.muted = false; // 🔥 IMPORTANT
-    video.className = "fixed inset-0 w-full h-full object-cover z-40";
-    document.body.appendChild(video);
+  const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
+  const remoteAudio = document.getElementById("remote-audio") as HTMLAudioElement;
+
+  // handle video
+  if (remoteVideo && stream.getVideoTracks().length > 0) {
+    if (!remoteVideo.srcObject) {
+      remoteVideo.srcObject = stream;
+    }
   }
 
-  video.srcObject = stream;
-
-  // 🔥 FORCE PLAY (mobile fix)
-  setTimeout(() => {
-    video.play().catch(() => {
-      console.log("autoplay blocked");
-    });
-  }, 100);
+  //  handle audio
+  if (remoteAudio && stream.getAudioTracks().length > 0) {
+    if (!remoteAudio.srcObject) {
+      remoteAudio.srcObject = stream;
+    }
+  }
 };
-
     return peer;
   };
 
-  const startCall = async (to: string, user: any) => {
+const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
     try {
      const stream = await navigator.mediaDevices.getUserMedia({
   audio: {
@@ -72,17 +69,22 @@ peer.ontrack = (event) => {
     noiseSuppression: true,
     autoGainControl: true,
   },
-  video: {
-    width: 1280,
-    height: 720,
-    facingMode: "user",
-  },
+ video: type === "video"
+  ? {
+      width: 1280,
+      height: 720,
+      facingMode: "user",
+    }
+  : false
      });
-      const localVideo = document.getElementById("local-video") as HTMLVideoElement;
 
-if (localVideo) {
-  localVideo.srcObject = stream;
-}
+      setTimeout(() => {
+  const localVideo = document.getElementById("local-video") as HTMLVideoElement;
+  if (localVideo) {
+    localVideo.srcObject = stream;
+  }
+      }, 0);
+    
 
       localStreamRef.current = stream;
       setActiveCallUserId(to);
@@ -98,39 +100,42 @@ stream.getAudioTracks().forEach((track) => {
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
 
+        callSocket.setCallType(type);
       socket.emit("call-user", {
         to,
         offer,
         user, 
+        type,
       });
 
       callSocket.setCallStatus("calling");
       callSocket.setCallUser(user);
+      console.log("START CALL TYPE:", type);
       console.log("🎤 sending tracks:", stream.getTracks());
     } catch (err) {
       console.error("Mic permission denied");
     }
   };
 
-  const acceptCall = async (from: string, offer: any) => {
-   const stream = await navigator.mediaDevices.getUserMedia({
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
-  },
-  video: {
-    width: 1280,
-    height: 720,
-    facingMode: "user",
-  },
+const acceptCall = async (from: string, offer: any, type = "audio") => {
+  const stream = await navigator.mediaDevices.getUserMedia({
+  audio: true,
+  video: type === "video"
+  ? {
+      width: 1280,
+      height: 720,
+      facingMode: "user",
+    }
+  : false,
 });
 
-    const localVideo = document.getElementById("local-video") as HTMLVideoElement;
-
-if (localVideo) {
-  localVideo.srcObject = stream;
-}
+  setTimeout(() => {
+  const localVideo = document.getElementById("local-video") as HTMLVideoElement;
+  if (localVideo) {
+    localVideo.srcObject = stream;
+  }
+}, 0);
+  
     localStreamRef.current = stream;
     setActiveCallUserId(from);
 
@@ -178,13 +183,11 @@ stream.getAudioTracks().forEach((track) => {
     const audio = document.getElementById("remote-audio");
     if (audio) {
       (audio as HTMLAudioElement).srcObject = null;
-      audio.remove();
     }
 
     const video = document.getElementById("remote-video");
 if (video) {
   (video as HTMLVideoElement).srcObject = null;
-  video.remove();
 }
 
   };
@@ -202,7 +205,8 @@ if (video) {
 
   callSocket.setCallStatus("idle");
   callSocket.setIncomingCall(null);
-  callSocket.setCallUser(null);
+   callSocket.setCallUser(null);
+   callSocket.setCallType("audio");
   setActiveCallUserId(null);
 };
 
@@ -220,7 +224,7 @@ if (video) {
     return () => {
       socket.off("call-ended", handleEnd);
     };
-  }, []);
+  }, [callSocket]);
 
   const isMutedRef = useRef(false);
 

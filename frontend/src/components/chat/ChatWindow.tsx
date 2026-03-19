@@ -183,10 +183,13 @@ const scrollToMessage = async (messageId: string) => {
     <ChatHeader
   user={{
     ...chat,
-    onCall: () => {
-      call.startCall(chat._id, chat);
-      callSocket.setCallStatus("calling");
-    },
+    onCall: (type: "audio" | "video") => {
+  console.log("CALL TYPE CLICKED:", type); // 🔥 debug
+
+  call.startCall(chat._id, chat, type); // 🔥 PASS TYPE
+
+  callSocket.setCallStatus("calling");
+},
     callStatus: callSocket.callStatus, // 👈 ADD THIS
   }}
   onBack={onBack}

@@ -55,32 +55,39 @@ export default function ChatHeader({ user, onBack }: any) {
 </span>
 
       </div>
-      <div className="ml-auto flex items-center gap-3">
+     <div className="ml-auto flex items-center gap-3">
   {!user.isBot && (
-    <button
-  onClick={() => {
-    if (user.callStatus === "idle") {
-      user.onCall?.();
-    }
-  }}
-  disabled={user.callStatus !== "idle"}
-  className={`text-white transition ${
-    user.callStatus !== "idle"
-      ? "opacity-50 cursor-not-allowed"
-      : "hover:scale-110"
-  }`}
->
-      <Phone size={20} />
-          </button>
-          
-          
-        )}
-        <button
-  onClick={() => user.onCall?.("video")}
-  className="text-white hover:scale-110"
->
-  📹
-</button>
+    <>
+      {/* 📞 AUDIO CALL */}
+      <button
+        onClick={() => {
+          if (user.callStatus === "idle") {
+            user.onCall?.("audio"); // 🔥 important
+          }
+        }}
+        disabled={user.callStatus !== "idle"}
+        className={`text-white transition ${
+          user.callStatus !== "idle"
+            ? "opacity-50 cursor-not-allowed"
+            : "hover:scale-110"
+        }`}
+      >
+        <Phone size={20} />
+      </button>
+
+      {/* 📹 VIDEO CALL */}
+      <button
+        onClick={() => {
+          if (user.callStatus === "idle") {
+            user.onCall?.("video"); // 🔥 already correct
+          }
+        }}
+        className="text-white hover:scale-110"
+      >
+        📹
+      </button>
+    </>
+  )}
 </div>
     </div>
   );

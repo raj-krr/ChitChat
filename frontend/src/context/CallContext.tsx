@@ -10,12 +10,14 @@ export const CallProvider = ({ children }: any) => {
   >("idle");
 
   const [callUser, setCallUser] = useState<any>(null);
+  const [callType, setCallType] = useState<"audio" | "video">("audio");
 const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
   useEffect(() => {
-    const onIncoming = ({ from, offer, user }: any) => {
-      setIncomingCall({ from, offer });
+    const onIncoming = ({ from, offer, user, type }: any) => {
+      setIncomingCall({ from, offer, type });
       setCallUser(user); //  store caller info
       setCallStatus("ringing");
+      setCallType(type);
       
     };
 
@@ -58,7 +60,9 @@ const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
         callUser,
         setCallUser,
          activeCallUserId,
-  setActiveCallUserId,
+        setActiveCallUserId,
+        callType,
+        setCallType,
       }}
     >
       {children}

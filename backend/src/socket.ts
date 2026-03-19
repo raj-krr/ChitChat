@@ -48,7 +48,7 @@ export function initSocket(io: Server) {
 
   
 
-    socket.on("call-user", ({ to, offer, user }) => {
+    socket.on("call-user", ({ to, offer, user, type }) => {
       if (!to || !offer) return;
 
       const toSocketId = onlineUsers.get(to);
@@ -79,6 +79,7 @@ export function initSocket(io: Server) {
         from: userId,
         offer,
         user,
+        type: type || "audio",
       });
     });
 
