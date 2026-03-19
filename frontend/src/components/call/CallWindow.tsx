@@ -22,11 +22,20 @@ export default function CallWindow() {
     return () => clearInterval(interval);
   }, [callSocket.callStatus]);
 
-  useEffect(() => {
+useEffect(() => {
   const video = document.getElementById("remote-video") as HTMLVideoElement;
 
-  if (video && video.srcObject) {
-    video.play().catch(() => {});
+  if (video) {
+    video.muted = false;
+
+    video.play().catch(() => {
+      console.log("User interaction required");
+
+      //  fallback: wait for tap
+      document.body.addEventListener("click", () => {
+        video.play().catch(() => {});
+      }, { once: true });
+    });
   }
 }, [callSocket.callStatus]);
   // 🔁 RESET
@@ -115,13 +124,14 @@ export default function CallWindow() {
       id="remote-video"
       autoPlay
       playsInline
+      muted
       className="absolute inset-0 w-full h-full object-cover"
     />
 
     <video
       id="local-video"
       autoPlay
-      muted={false}
+      muted
       playsInline
       className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover z-50"
     />

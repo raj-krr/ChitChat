@@ -44,26 +44,17 @@ peer.ontrack = (event) => {
   const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
   const remoteAudio = document.getElementById("remote-audio") as HTMLAudioElement;
 
-  // 🎥 VIDEO
   if (remoteVideo && stream.getVideoTracks().length > 0) {
+  if (!remoteVideo.srcObject) {
     remoteVideo.srcObject = stream;
-
-    remoteVideo.muted = false;
-    remoteVideo.autoplay = true;
-
-    setTimeout(() => {
-      remoteVideo.play().catch(() => console.log("video play blocked"));
-    }, 100);
   }
+}
 
-  // 🔊 AUDIO
-  if (remoteAudio && stream.getAudioTracks().length > 0) {
+if (remoteAudio && stream.getAudioTracks().length > 0) {
+  if (!remoteAudio.srcObject) {
     remoteAudio.srcObject = stream;
-
-    setTimeout(() => {
-      remoteAudio.play().catch(() => console.log("audio play blocked"));
-    }, 100);
   }
+}
 };
     return peer;
   };
