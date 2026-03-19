@@ -71,8 +71,16 @@ export default function ChatHeader({ user, onBack }: any) {
   }`}
 >
       <Phone size={20} />
-    </button>
-  )}
+          </button>
+          
+          
+        )}
+        <button
+  onClick={() => user.onCall?.("video")}
+  className="text-white hover:scale-110"
+>
+  📹
+</button>
 </div>
     </div>
   );

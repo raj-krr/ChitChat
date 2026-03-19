@@ -39,29 +39,24 @@ export function useCall() {
 peer.ontrack = (event) => {
   const stream = event.streams[0];
 
-  console.log("🎧 TRACK RECEIVED", stream);
-  console.log("🎧 AUDIO TRACKS:", stream.getAudioTracks());
+  let video = document.getElementById("remote-video") as HTMLVideoElement;
 
-  if (stream.getAudioTracks().length === 0) {
-    console.log("❌ NO AUDIO TRACK RECEIVED");
-    return;
+  if (!video) {
+    video = document.createElement("video");
+    video.id = "remote-video";
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = false; // 🔥 IMPORTANT
+    video.className = "fixed inset-0 w-full h-full object-cover z-40";
+    document.body.appendChild(video);
   }
 
-  let audio = document.getElementById("remote-audio") as HTMLAudioElement;
+  video.srcObject = stream;
 
-  if (!audio) {
-    audio = document.createElement("audio");
-    audio.id = "remote-audio";
-    audio.autoplay = true;
-    audio.controls = true;
-    document.body.appendChild(audio);
-  }
-
-  audio.srcObject = stream;
-
+  // 🔥 FORCE PLAY (mobile fix)
   setTimeout(() => {
-    audio.play().catch(() => {
-      console.log("🔇 autoplay blocked");
+    video.play().catch(() => {
+      console.log("autoplay blocked");
     });
   }, 100);
 };
@@ -71,7 +66,23 @@ peer.ontrack = (event) => {
 
   const startCall = async (to: string, user: any) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+     const stream = await navigator.mediaDevices.getUserMedia({
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  },
+  video: {
+    width: 1280,
+    height: 720,
+    facingMode: "user",
+  },
+     });
+      const localVideo = document.getElementById("local-video") as HTMLVideoElement;
+
+if (localVideo) {
+  localVideo.srcObject = stream;
+}
 
       localStreamRef.current = stream;
       setActiveCallUserId(to);
@@ -102,8 +113,24 @@ stream.getAudioTracks().forEach((track) => {
   };
 
   const acceptCall = async (from: string, offer: any) => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+   const stream = await navigator.mediaDevices.getUserMedia({
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  },
+  video: {
+    width: 1280,
+    height: 720,
+    facingMode: "user",
+  },
+});
 
+    const localVideo = document.getElementById("local-video") as HTMLVideoElement;
+
+if (localVideo) {
+  localVideo.srcObject = stream;
+}
     localStreamRef.current = stream;
     setActiveCallUserId(from);
 
@@ -153,6 +180,12 @@ stream.getAudioTracks().forEach((track) => {
       (audio as HTMLAudioElement).srcObject = null;
       audio.remove();
     }
+
+    const video = document.getElementById("remote-video");
+if (video) {
+  (video as HTMLVideoElement).srcObject = null;
+  video.remove();
+}
 
   };
 
