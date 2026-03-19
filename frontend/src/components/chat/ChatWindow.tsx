@@ -7,6 +7,11 @@ import { useEffect, useState } from "react";
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useChatSocket } from "./hooks/useChatSocket";
 
+import { useCall } from "../call/hooks/useCall";
+import { useGlobalCall } from "../../context/CallContext";
+import { socket } from "../../apis/socket";
+import CallWindow from "../call/CallWindow";
+
 const safeDate = (date?: string) => {
   if (!date) return null;
   const d = new Date(date);
@@ -28,6 +33,10 @@ export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
   const [replyTo, setReplyTo] = useState<any>(null);
 
+  const call = useCall();
+
+const callSocket = useGlobalCall();
+  
   const {
     messages,
     setMessages,
@@ -69,6 +78,37 @@ export default function ChatWindow({ chat, onBack }: any) {
       markRead();
     }
   }, [chat._id]);
+
+useEffect(() => {
+  const handleAnswer = ({ answer }: { answer: RTCSessionDescriptionInit }) => {
+    console.log("📩 answer received");
+    call.setRemoteAnswer(answer);
+  };
+
+  const handleIce = ({ candidate }: { candidate: RTCIceCandidateInit }) => {
+    call.addIceCandidate(candidate);
+  };
+
+  socket.on("call-answered", handleAnswer);
+  socket.on("ice-candidate", handleIce);
+
+  return () => {
+    socket.off("call-answered", handleAnswer);
+    socket.off("ice-candidate", handleIce);
+  };
+}, [call]);
+  
+  useEffect(() => {
+  const handleEnd = () => {
+    call.cleanup(); 
+  };
+
+  socket.on("call-ended", handleEnd);
+
+  return () => {
+    socket.off("call-ended", handleEnd);
+  };
+}, []);
 
 const scrollToMessage = async (messageId: string) => {
   const id = String(messageId);
@@ -141,7 +181,17 @@ const scrollToMessage = async (messageId: string) => {
 
   return (
     <div className="flex w-full flex-col h-full min-h-0 relative">
-      <ChatHeader user={chat} onBack={onBack} />
+    <ChatHeader
+  user={{
+    ...chat,
+    onCall: () => {
+      call.startCall(chat._id, chat);
+      callSocket.setCallStatus("calling");
+    },
+    callStatus: callSocket.callStatus, // 👈 ADD THIS
+  }}
+  onBack={onBack}
+/>
 
       <div
         ref={containerRef}

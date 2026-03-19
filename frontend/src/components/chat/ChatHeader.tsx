@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Phone } from "lucide-react";
 import { usePresence } from "../../context/PresenceContext";
 
 export default function ChatHeader({ user, onBack }: any) {
@@ -40,17 +40,40 @@ export default function ChatHeader({ user, onBack }: any) {
         <span className="text-white font-semibold">
           {user.username}
         </span>
-       <span className="text-xs text-white/70">
-  {user.isBot
+      <span className="text-xs text-white/70">
+  {user.callStatus === "calling"
+    ? "📡 Calling..."
+    : user.callStatus === "connected"
+    ? "🎤 In call"
+    : user.isBot
     ? "🤖 AI Assistant"
     : isOnline
-      ? "online"
-      : lastSeen[user._id]
-        ? `last seen ${new Date(lastSeen[user._id]).toLocaleTimeString()}`
-        : "offline"}
+    ? "online"
+    : lastSeen[user._id]
+    ? `last seen ${new Date(lastSeen[user._id]).toLocaleTimeString()}`
+    : "offline"}
 </span>
 
       </div>
+      <div className="ml-auto flex items-center gap-3">
+  {!user.isBot && (
+    <button
+  onClick={() => {
+    if (user.callStatus === "idle") {
+      user.onCall?.();
+    }
+  }}
+  disabled={user.callStatus !== "idle"}
+  className={`text-white transition ${
+    user.callStatus !== "idle"
+      ? "opacity-50 cursor-not-allowed"
+      : "hover:scale-110"
+  }`}
+>
+      <Phone size={20} />
+    </button>
+  )}
+</div>
     </div>
   );
 }

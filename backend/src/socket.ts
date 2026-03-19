@@ -7,6 +7,7 @@ export const onlineUsers = new Map<string, string>();
 const userLastMessage = new Map<string, number>();
 const messageTracker = new Map<string, number[]>();
 const mutedUsers = new Map<string, number>();
+const ongoingCalls = new Map<string, string>();
 
 export function initSocket(io: Server) {
   io.use((socket, next) => {
@@ -36,14 +37,102 @@ export function initSocket(io: Server) {
     socket.emit("online-users", Array.from(onlineUsers.keys()));
 
     onlineUsers.set(userId, socket.id);
-
     socket.broadcast.emit("user-online", userId);
 
     socket.on("typing", ({ to }) => {
       const socketId = onlineUsers.get(to);
       if (socketId) {
-        io.to(socketId).emit("typing", {
+        io.to(socketId).emit("typing", { from: userId });
+      }
+    });
+
+  
+
+    socket.on("call-user", ({ to, offer, user }) => {
+      if (!to || !offer) return;
+
+      const toSocketId = onlineUsers.get(to);
+
+      // user offline
+      if (!toSocketId) {
+        socket.emit("error", "User is offline");
+        return;
+      }
+
+      //  caller already in call
+      if (ongoingCalls.has(userId)) {
+        socket.emit("error", "You are already in a call");
+        return;
+      }
+
+      //  receiver busy
+      if (ongoingCalls.has(to)) {
+        socket.emit("call-busy");
+        return;
+      }
+
+      //  mark both users in call
+      ongoingCalls.set(userId, to);
+      ongoingCalls.set(to, userId);
+
+      io.to(toSocketId).emit("incoming-call", {
+        from: userId,
+        offer,
+        user,
+      });
+    });
+
+    socket.on("answer-call", ({ to, answer }) => {
+      if (!to || !answer) return;
+
+      const toSocketId = onlineUsers.get(to);
+      if (toSocketId) {
+        io.to(toSocketId).emit("call-answered", {
           from: userId,
+          answer,
+        });
+      }
+    });
+
+    socket.on("reject-call", ({ to }) => {
+      const toSocketId = onlineUsers.get(to);
+
+      if (toSocketId) {
+        io.to(toSocketId).emit("call-rejected", {
+          from: userId,
+        });
+      }
+
+      ongoingCalls.delete(userId);
+      ongoingCalls.delete(to);
+    });
+
+    socket.on("end-call", ({ to }) => {
+      const toSocketId = onlineUsers.get(to);
+
+      if (toSocketId) {
+        io.to(toSocketId).emit("call-ended", {
+          from: userId,
+        });
+      }
+      socket.emit("call-ended");
+
+      ongoingCalls.delete(userId);
+      ongoingCalls.delete(to);
+    });
+
+    socket.on("ice-candidate", ({ to, candidate }) => {
+      if (!to || !candidate) return;
+
+      // only allow if user is in a call
+      if (!ongoingCalls.has(userId)) return;
+
+      const toSocketId = onlineUsers.get(to);
+
+      if (toSocketId) {
+        io.to(toSocketId).emit("ice-candidate", {
+          from: userId,
+          candidate,
         });
       }
     });
@@ -75,7 +164,7 @@ export function initSocket(io: Server) {
       messageTracker.set(userId, filtered);
 
       if (filtered.length > 25) {
-        mutedUsers.set(userId, now + 60000); // 1 min mute
+        mutedUsers.set(userId, now + 60000);
         socket.emit("error", "Spam detected. You are muted for 1 min");
         return;
       }
@@ -103,6 +192,21 @@ export function initSocket(io: Server) {
 
       onlineUsers.delete(userId);
 
+      const partner = ongoingCalls.get(userId);
+
+      if (partner) {
+        const partnerSocket = onlineUsers.get(partner);
+
+        if (partnerSocket) {
+          io.to(partnerSocket).emit("call-ended", {
+            from: userId,
+          });
+        }
+
+        ongoingCalls.delete(userId);
+        ongoingCalls.delete(partner);
+      }
+
       socket.broadcast.emit("user-offline", {
         userId,
         lastSeen: new Date(),
@@ -110,6 +214,7 @@ export function initSocket(io: Server) {
     });
   });
 }
+
 
 setInterval(() => {
   const now = Date.now();

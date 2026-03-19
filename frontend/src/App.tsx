@@ -13,10 +13,12 @@ import Home from "./pages/HomePage";
 import ProfilePage from "./pages/profile/ProfilePage";
 import NotificationsPage from "./pages/NotificationsPage";
 import PublicRoute from "./routes/PublicRoute";
+import CallWindow from "./components/call/CallWindow";
 
 function App() {
 
   return (
+    <>
     <Routes>
       <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -37,6 +39,9 @@ function App() {
         }
       />
     </Routes>
+      <CallWindow />
+      </>
+    
   );
 }
 

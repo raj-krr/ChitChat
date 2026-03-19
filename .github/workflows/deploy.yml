@@ -3,7 +3,7 @@ name: CI/CD - Build & Deploy to EC2 (Docker Hub + Rollback)
 on:
   push:
     branches:
-      - main
+      - development
 
 env:
   DOCKERHUB_REPO_BACKEND: rajkrr/chat_app_backend
