@@ -22,6 +22,13 @@ export default function CallWindow() {
     return () => clearInterval(interval);
   }, [callSocket.callStatus]);
 
+  useEffect(() => {
+  const video = document.getElementById("remote-video") as HTMLVideoElement;
+
+  if (video && video.srcObject) {
+    video.play().catch(() => {});
+  }
+}, [callSocket.callStatus]);
   // 🔁 RESET
   useEffect(() => {
     if (callSocket.callStatus === "idle") {
@@ -114,7 +121,7 @@ export default function CallWindow() {
     <video
       id="local-video"
       autoPlay
-      muted
+      muted={false}
       playsInline
       className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover z-50"
     />
