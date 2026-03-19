@@ -22,22 +22,6 @@ export default function CallWindow() {
     return () => clearInterval(interval);
   }, [callSocket.callStatus]);
 
-useEffect(() => {
-  const video = document.getElementById("remote-video") as HTMLVideoElement;
-
-  if (video) {
-    video.muted = false;
-
-    video.play().catch(() => {
-      console.log("User interaction required");
-
-      //  fallback: wait for tap
-      document.body.addEventListener("click", () => {
-        video.play().catch(() => {});
-      }, { once: true });
-    });
-  }
-}, [callSocket.callStatus]);
   // 🔁 RESET
   useEffect(() => {
     if (callSocket.callStatus === "idle") {

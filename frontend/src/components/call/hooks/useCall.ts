@@ -41,19 +41,15 @@ peer.ontrack = (event) => {
 
   console.log("🎥 TRACK RECEIVED:", stream);
 
-  const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
-  const remoteAudio = document.getElementById("remote-audio") as HTMLAudioElement;
+ const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
+const remoteAudio = document.getElementById("remote-audio") as HTMLAudioElement;
 
-  if (remoteVideo && stream.getVideoTracks().length > 0) {
-  if (!remoteVideo.srcObject) {
-    remoteVideo.srcObject = stream;
-  }
+if (remoteVideo && stream.getVideoTracks().length > 0) {
+  remoteVideo.srcObject = stream;
 }
 
 if (remoteAudio && stream.getAudioTracks().length > 0) {
-  if (!remoteAudio.srcObject) {
-    remoteAudio.srcObject = stream;
-  }
+  remoteAudio.srcObject = stream;
 }
 };
     return peer;
@@ -204,7 +200,7 @@ if (video) {
   const to = activeCallUserId;
 
   console.log("ENDING CALL TO:", to);
-
+console.log("❌ END CALL TRIGGERED");
   if (to) {
     socket.emit("end-call", { to });
   }
