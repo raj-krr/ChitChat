@@ -41,16 +41,19 @@ peer.ontrack = (event) => {
 
   console.log("🎥 TRACK RECEIVED:", stream);
 
- const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
-const remoteAudio = document.getElementById("remote-audio") as HTMLAudioElement;
+  const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
 
-if (remoteVideo && stream.getVideoTracks().length > 0) {
-  remoteVideo.srcObject = stream;
-}
+  //  ALWAYS attach stream
+  if (remoteVideo) {
+    remoteVideo.srcObject = stream;
 
-if (remoteAudio && stream.getAudioTracks().length > 0) {
-  remoteAudio.srcObject = stream;
-}
+    setTimeout(() => {
+      remoteVideo.play().catch(() => {
+        console.log("⚠️ video autoplay blocked");
+      });
+    }, 100);
+  }
+
 };
     return peer;
   };
@@ -252,12 +255,7 @@ useEffect(() => {
     return isMutedRef.current; 
   };
 
-  const toggleSpeaker = () => {
-    const audio = document.getElementById("remote-audio") as HTMLAudioElement;
-    if (!audio) return;
 
-    audio.volume = audio.volume === 1 ? 0.3 : 1;
-  };
 
   return {
     startCall,
@@ -267,6 +265,5 @@ useEffect(() => {
     endCall,
     cleanup,
     toggleMute,
-    toggleSpeaker,
   };
 }

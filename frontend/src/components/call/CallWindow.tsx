@@ -8,8 +8,7 @@ export default function CallWindow() {
   const call = useCall();
 
   const [seconds, setSeconds] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-
+const [isMuted, setIsMuted] = useState(false);
   const isVideo = callSocket.callType === "video";
   // ⏱️ TIMER
   useEffect(() => {
@@ -34,10 +33,6 @@ export default function CallWindow() {
   const handleMute = () => {
     const muted = call.toggleMute();
     setIsMuted(muted);
-  };
-
-  const handleSpeaker = () => {
-    call.toggleSpeaker();
   };
 
   const handleEnd = () => {
@@ -108,7 +103,6 @@ export default function CallWindow() {
       id="remote-video"
       autoPlay
       playsInline
-      muted
       className="absolute inset-0 w-full h-full object-cover"
     />
 
@@ -131,7 +125,6 @@ export default function CallWindow() {
     <h2>{callSocket.callUser?.username}</h2>
   </div>
         )}
-        <audio id="remote-audio" autoPlay />
         {/* 👤 USER INFO */}
         <div className="absolute top-12 left-0 right-0 text-center z-50">
           <h2 className="text-xl font-semibold">
@@ -160,13 +153,7 @@ export default function CallWindow() {
             {isMuted ? "🔕" : "🎤"}
           </button>
 
-          {/* 🔊 SPEAKER */}
-          <button
-            onClick={handleSpeaker}
-            className="bg-white/20 p-4 rounded-full"
-          >
-            🔊
-          </button>
+
 
           {/* ❌ END */}
           <button

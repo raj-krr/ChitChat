@@ -97,17 +97,6 @@ useEffect(() => {
   };
 }, [call]);
   
-  useEffect(() => {
-  const handleEnd = () => {
-    call.cleanup(); 
-  };
-
-  socket.on("call-ended", handleEnd);
-
-  return () => {
-    socket.off("call-ended", handleEnd);
-  };
-}, []);
 
 const scrollToMessage = async (messageId: string) => {
   const id = String(messageId);
