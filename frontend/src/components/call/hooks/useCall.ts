@@ -5,7 +5,8 @@ import { useGlobalCall } from "../../../context/CallContext";
 export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef: any) {
 const peerRef = useRef<RTCPeerConnection | null>(null);
 const localStreamRef = useRef<MediaStream | null>(null);
-
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  
 const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
 const callSocket = useGlobalCall();
 const iceQueueRef = useRef<any[]>([]);
@@ -53,30 +54,26 @@ peer.onicecandidate = (e) => {
   }
 };
 
-// TRACK HANDLER
-let remoteStream: MediaStream | null = null;
 
 peer.ontrack = (event) => {
   console.log("🎥 TRACK:", event.track.kind);
 
-  if (!remoteStream) {
-    remoteStream = new MediaStream();
+  if (!remoteStreamRef.current) {
+    remoteStreamRef.current = new MediaStream();
   }
 
-  remoteStream.addTrack(event.track);
+  remoteStreamRef.current.addTrack(event.track);
 
   // 🎥 VIDEO
   if (remoteVideoRef.current) {
-    remoteVideoRef.current.srcObject = remoteStream;
+    remoteVideoRef.current.srcObject = remoteStreamRef.current;
   }
 
   // 🔊 AUDIO
   if (remoteAudioRef.current) {
-    remoteAudioRef.current.srcObject = remoteStream;
-
+    remoteAudioRef.current.srcObject = remoteStreamRef.current;
     remoteAudioRef.current.muted = false;
     remoteAudioRef.current.volume = 1;
-
   }
 };
 
