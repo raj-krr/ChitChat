@@ -74,6 +74,7 @@ peer.ontrack = (event) => {
     remoteAudioRef.current.srcObject = remoteStreamRef.current;
     remoteAudioRef.current.muted = false;
     remoteAudioRef.current.volume = 1;
+     remoteAudioRef.current.play().catch(() => {});
   }
 };
 
@@ -276,6 +277,7 @@ if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
 if (localVideoRef.current) localVideoRef.current.srcObject = null;
 
+  remoteStreamRef.current = null;
 };
 
 //  END CALL
