@@ -18,13 +18,25 @@ const isVideo = callSocket.callType === "video";
 useEffect(() => {
 if (callSocket.callStatus !== "connected") return;
 
+
 const interval = setInterval(() => {
   setSeconds((s) => s + 1);
 }, 1000);
 
 return () => clearInterval(interval);
 
+
 }, [callSocket.callStatus]);
+  
+  useEffect(() => {
+  if (callSocket.callStatus === "calling" && callSocket.callUser) {
+    call.startCall(
+      callSocket.callUser._id,
+      callSocket.callUser,
+      callSocket.callType
+    );
+  }
+}, [callSocket.callStatus,callSocket.callUser]);
 
 // 🔁 RESET
 useEffect(() => {
@@ -44,7 +56,7 @@ const handleEnd = () => {
 call.endCall();
 };
 
-// ✅ ACCEPT
+// ✅ ACCEPT CALL
 const handleAccept = async () => {
 await call.acceptCall(
 callSocket.incomingCall.from,
@@ -52,7 +64,7 @@ callSocket.incomingCall.offer,
 callSocket.incomingCall.type
 );
 
-// 🔥 USER INTERACTION FIX (AUTOPLAY)
+// 🔥 ensure playback (user interaction)
 remoteVideoRef.current?.play().catch(() => {});
 remoteAudioRef.current?.play().catch(() => {});
 
@@ -64,19 +76,37 @@ const handleReject = () => {
 socket.emit("reject-call", {
 to: callSocket.incomingCall.from,
 });
+
 callSocket.setIncomingCall(null);
+
 };
 
-// 📞 INCOMING
+// 📞 INCOMING CALL UI
 if (callSocket.incomingCall) {
-return ( <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white z-50"> <h2 className="text-2xl mb-4">{callSocket.callUser?.username}</h2>
+return ( <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white z-50">
+<img
+src={callSocket.callUser?.avatar || "/avatar-placeholder.png"}
+className="w-28 h-28 rounded-full mb-4"
+/>
 
-    <div className="flex gap-10">
-      <button onClick={handleAccept} className="bg-green-500 px-6 py-3 rounded-full">
+    <h2 className="text-2xl font-semibold">
+      {callSocket.callUser?.username}
+    </h2>
+
+    <p className="text-white/60 mt-2">Incoming Call 📞</p>
+
+    <div className="flex gap-10 mt-8">
+      <button
+        onClick={handleAccept}
+        className="bg-green-500 px-6 py-3 rounded-full"
+      >
         Accept
       </button>
 
-      <button onClick={handleReject} className="bg-red-500 px-6 py-3 rounded-full">
+      <button
+        onClick={handleReject}
+        className="bg-red-500 px-6 py-3 rounded-full"
+      >
         Reject
       </button>
     </div>
@@ -85,13 +115,13 @@ return ( <div className="fixed inset-0 bg-black flex flex-col items-center justi
 
 }
 
-// 📡 CALL SCREEN
+// 📡 ACTIVE CALL UI
 if (
 callSocket.callStatus === "calling" ||
 callSocket.callStatus === "connected"
 ) {
 return ( <div className="fixed inset-0 bg-black text-white z-50">
-{/* 🎥 VIDEO */}
+{/* 🎥 VIDEO MODE */}
 {isVideo && (
 <> <video
            ref={remoteVideoRef}
@@ -111,10 +141,14 @@ return ( <div className="fixed inset-0 bg-black text-white z-50">
       </>
     )}
 
-    {/* 🔊 AUDIO */}
-    <audio ref={remoteAudioRef} autoPlay playsInline controls />
+    {/* 🔊 AUDIO ELEMENT (always present) */}
+    <audio
+      ref={remoteAudioRef}
+      autoPlay
+      playsInline
+    />
 
-    {/* 👤 INFO */}
+    {/* 👤 USER INFO */}
     <div className="absolute top-12 left-0 right-0 text-center">
       <h2 className="text-xl font-semibold">
         {callSocket.callUser?.username}
@@ -123,7 +157,9 @@ return ( <div className="fixed inset-0 bg-black text-white z-50">
       <p className="text-white/70 text-sm">
         {callSocket.callStatus === "calling"
           ? "Calling..."
-          : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`}
+          : `${Math.floor(seconds / 60)}:${String(
+              seconds % 60
+            ).padStart(2, "0")}`}
       </p>
     </div>
 

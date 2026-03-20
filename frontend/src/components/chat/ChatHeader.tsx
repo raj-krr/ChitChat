@@ -1,9 +1,10 @@
 import { ArrowLeft, Phone } from "lucide-react";
 import { usePresence } from "../../context/PresenceContext";
-
+import { useGlobalCall } from "../../context/CallContext";
 export default function ChatHeader({ user, onBack }: any) {
   const { onlineUsers, lastSeen } = usePresence();
 
+const callSocket = useGlobalCall();
   const isOnline = onlineUsers.has(user._id);
 
   return (
@@ -41,9 +42,9 @@ export default function ChatHeader({ user, onBack }: any) {
           {user.username}
         </span>
       <span className="text-xs text-white/70">
-  {user.callStatus === "calling"
+  {callSocket.callStatus === "calling"
     ? "📡 Calling..."
-    : user.callStatus === "connected"
+    : callSocket.callStatus === "connected"
     ? "🎤 In call"
     : user.isBot
     ? "🤖 AI Assistant"
@@ -61,13 +62,13 @@ export default function ChatHeader({ user, onBack }: any) {
       {/* 📞 AUDIO CALL */}
       <button
         onClick={() => {
-          if (user.callStatus === "idle") {
+          if (callSocket.callStatus === "idle") {
             user.onCall?.("audio"); // 🔥 important
           }
         }}
-        disabled={user.callStatus !== "idle"}
+        disabled={callSocket.callStatus !== "idle"}
         className={`text-white transition ${
-          user.callStatus !== "idle"
+          callSocket.callStatus !== "idle"
             ? "opacity-50 cursor-not-allowed"
             : "hover:scale-110"
         }`}
@@ -78,7 +79,7 @@ export default function ChatHeader({ user, onBack }: any) {
       {/* 📹 VIDEO CALL */}
       <button
         onClick={() => {
-          if (user.callStatus === "idle") {
+          if (callSocket.callStatus === "idle") {
             user.onCall?.("video"); // 🔥 already correct
           }
         }}

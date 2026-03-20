@@ -7,9 +7,7 @@ import { useEffect, useState} from "react";
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useChatSocket } from "./hooks/useChatSocket";
 
-import { useCall } from "../call/hooks/useCall";
 import { useGlobalCall } from "../../context/CallContext";
-import { socket } from "../../apis/socket";
 
 const safeDate = (date?: string) => {
   if (!date) return null;
@@ -32,9 +30,6 @@ export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
   const [replyTo, setReplyTo] = useState<any>(null);
 
-
-const { remoteVideoRef, localVideoRef, remoteAudioRef } = useGlobalCall();
-  const call = useCall(remoteVideoRef, localVideoRef,remoteAudioRef );
 const callSocket = useGlobalCall();
   
   const {
@@ -79,25 +74,6 @@ const callSocket = useGlobalCall();
     }
   }, [chat._id]);
 
-useEffect(() => {
-  const handleAnswer = ({ answer }: { answer: RTCSessionDescriptionInit }) => {
-    console.log("📩 answer received");
-    call.setRemoteAnswer(answer);
-  };
-
-  const handleIce = ({ candidate }: { candidate: RTCIceCandidateInit }) => {
-    call.addIceCandidate(candidate);
-  };
-
-  socket.on("call-answered", handleAnswer);
-  socket.on("ice-candidate", handleIce);
-
-  return () => {
-    socket.off("call-answered", handleAnswer);
-    socket.off("ice-candidate", handleIce);
-  };
-}, [call]);
-  
 
 const scrollToMessage = async (messageId: string) => {
   const id = String(messageId);
@@ -173,14 +149,12 @@ const scrollToMessage = async (messageId: string) => {
     <ChatHeader
   user={{
     ...chat,
-    onCall: (type: "audio" | "video") => {
-  console.log("CALL TYPE CLICKED:", type); // 🔥 debug
-
-  call.startCall(chat._id, chat, type); // 🔥 PASS TYPE
-
+   onCall: (type:any) => {
+  callSocket.setCallUser(chat);
+  callSocket.setCallType(type);
   callSocket.setCallStatus("calling");
-},
-    callStatus: callSocket.callStatus, // 👈 ADD THIS
+}
+     
   }}
   onBack={onBack}
 />

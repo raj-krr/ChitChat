@@ -18,8 +18,9 @@ export const CallProvider = ({ children }: any) => {
 const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
   useEffect(() => {
     const onIncoming = ({ from, offer, user, type }: any) => {
+       if (callStatusRef.current === "connected") return;
       setIncomingCall({ from, offer, type });
-      setCallUser(user); //  store caller info
+      setCallUser(user); 
       setCallStatus("ringing");
       setCallType(type);
       
@@ -33,16 +34,17 @@ const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
       setCallStatus("idle");
       setIncomingCall(null);
       setCallUser(null);
+       setActiveCallUserId(null);
     };
 
-    const onEnded = () => {
-      setCallStatus("idle");
-      setIncomingCall(null);
-      setCallUser(null);
-    };
+  const onEnded = () => {
+  setCallStatus("idle");
+  setIncomingCall(null);
+  setCallUser(null);
+  setActiveCallUserId(null); 
+};
 
     socket.on("incoming-call", onIncoming);
-    socket.on("call-answered", onAnswered);
     socket.on("call-rejected", onRejected);
     socket.on("call-ended", onEnded);
 
@@ -53,6 +55,11 @@ const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
       socket.off("call-ended", onEnded);
     };
   }, []);
+  const callStatusRef = useRef(callStatus);
+
+useEffect(() => {
+  callStatusRef.current = callStatus;
+}, [callStatus]);
 
   return (
     <CallContext.Provider
