@@ -76,10 +76,7 @@ peer.ontrack = (event) => {
 
     remoteAudioRef.current.muted = false;
     remoteAudioRef.current.volume = 1;
-
-    remoteAudioRef.current.play().catch(() => {
-      console.log("⚠️ autoplay blocked");
-    });
+    
   }
 };
 

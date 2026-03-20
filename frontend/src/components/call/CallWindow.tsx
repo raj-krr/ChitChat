@@ -58,20 +58,24 @@ call.endCall();
 
 // ✅ ACCEPT CALL
 const handleAccept = async () => {
-await call.acceptCall(
-callSocket.incomingCall.from,
-callSocket.incomingCall.offer,
-callSocket.incomingCall.type
-);
+  await call.acceptCall(
+    callSocket.incomingCall.from,
+    callSocket.incomingCall.offer,
+    callSocket.incomingCall.type
+  );
 
-// 🔥 ensure playback (user interaction)
-remoteVideoRef.current?.play().catch(() => {});
-remoteAudioRef.current?.play().catch(() => {});
+  // 🔥 USER INTERACTION UNLOCK
+  if (remoteAudioRef.current) {
+    remoteAudioRef.current.muted = false;
+    remoteAudioRef.current.volume = 1;
 
-callSocket.setIncomingCall(null);
+    await remoteAudioRef.current.play().catch(() => {
+      console.log("manual play failed");
+    });
+  }
 
+  callSocket.setIncomingCall(null);
 };
-
 const handleReject = () => {
 socket.emit("reject-call", {
 to: callSocket.incomingCall.from,
