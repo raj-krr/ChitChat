@@ -8,7 +8,7 @@ const localStreamRef = useRef<MediaStream | null>(null);
 
 const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
 const callSocket = useGlobalCall();
-
+const iceQueueRef = useRef<any[]>([]);
 //  SOCKET LISTENERS (ONLY ONCE)
 useEffect(() => {
 const handleAnswer = ({ answer }: any) => {
@@ -54,26 +54,32 @@ peer.onicecandidate = (e) => {
 };
 
 // TRACK HANDLER
+let remoteStream: MediaStream | null = null;
+
 peer.ontrack = (event) => {
   console.log("🎥 TRACK:", event.track.kind);
 
-  const track = event.track;
-
-  if (track.kind === "video" && remoteVideoRef.current) {
-    const videoStream = new MediaStream([track]);
-    remoteVideoRef.current.srcObject = videoStream;
-    remoteVideoRef.current.play().catch(() => {});
+  if (!remoteStream) {
+    remoteStream = new MediaStream();
   }
 
-  if (track.kind === "audio" && remoteAudioRef.current) {
-    const audioStream = new MediaStream([track]);
-    remoteAudioRef.current.srcObject = audioStream;
-    remoteAudioRef.current.muted = false;
-      remoteAudioRef.current.volume = 1;
+  remoteStream.addTrack(event.track);
 
-  remoteAudioRef.current.play().catch(() => {
-    console.log("⚠️ autoplay blocked");
-  });
+  // 🎥 VIDEO
+  if (remoteVideoRef.current) {
+    remoteVideoRef.current.srcObject = remoteStream;
+  }
+
+  // 🔊 AUDIO
+  if (remoteAudioRef.current) {
+    remoteAudioRef.current.srcObject = remoteStream;
+
+    remoteAudioRef.current.muted = false;
+    remoteAudioRef.current.volume = 1;
+
+    remoteAudioRef.current.play().catch(() => {
+      console.log("⚠️ autoplay blocked");
+    });
   }
 };
 
@@ -105,11 +111,17 @@ try {
   const peer = createPeer(to);
   peerRef.current = peer;
 
-  stream.getTracks().forEach((t) => peer.addTrack(t, stream));
+ for (const track of stream.getTracks()) {
+  peer.addTrack(track, stream);
+  }
+  console.log("🎯 SENDERS:", peer.getSenders());
 
   const offer = await peer.createOffer();
   await peer.setLocalDescription(offer);
 
+  peer.onconnectionstatechange = () => {
+  console.log("🔗 connection:", peer.connectionState);
+};
   callSocket.setCallType(type);
 
   socket.emit("call-user", {
@@ -146,10 +158,16 @@ if (localVideoRef.current) {
 const peer = createPeer(from);
 peerRef.current = peer;
 
-stream.getTracks().forEach((t) => peer.addTrack(t, stream));
+for (const track of stream.getTracks()) {
+  peer.addTrack(track, stream);
+}
 
 await peer.setRemoteDescription(new RTCSessionDescription(offer));
-
+// flush ICE queue
+for (const candidate of iceQueueRef.current) {
+  await peer.addIceCandidate(new RTCIceCandidate(candidate));
+}
+iceQueueRef.current = [];
 const answer = await peer.createAnswer();
 await peer.setLocalDescription(answer);
 
@@ -168,21 +186,33 @@ await peerRef.current.setRemoteDescription(
   new RTCSessionDescription(answer)
 );
 
+for (const candidate of iceQueueRef.current) {
+  await peerRef.current.addIceCandidate(
+    new RTCIceCandidate(candidate)
+  );
+}
+  iceQueueRef.current = [];
+  
 callSocket.setCallStatus("connected");
 
 };
 //  ICE
 const addIceCandidate = async (candidate: any) => {
+  if (!peerRef.current) return;
+
+  if (!peerRef.current.remoteDescription) {
+    console.log("⏳ ICE queued");
+    iceQueueRef.current.push(candidate);
+    return;
+  }
 
   try {
-  if (!peerRef.current || peerRef.current.signalingState === "closed") return;
-  await peerRef.current.addIceCandidate(
-    new RTCIceCandidate(candidate)
-  );
-} catch (e) {
-  console.log("ICE error", e);
-}
-
+    await peerRef.current.addIceCandidate(
+      new RTCIceCandidate(candidate)
+    );
+  } catch (e) {
+    console.log("ICE error", e);
+  }
 };
 
 //  CLEANUP
