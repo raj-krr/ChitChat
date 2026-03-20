@@ -29,7 +29,7 @@ return () => clearInterval(interval);
 }, [callSocket.callStatus]);
   
   useEffect(() => {
-  if (callSocket.callStatus === "calling" && callSocket.callUser) {
+  if (callSocket.callStatus === "calling" && callSocket.callUser && !callSocket.activeCallUserId) {
     call.startCall(
       callSocket.callUser._id,
       callSocket.callUser,

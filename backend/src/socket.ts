@@ -52,7 +52,12 @@ export function initSocket(io: Server) {
       if (!to || !offer) return;
 
       const toSocketId = onlineUsers.get(to);
-
+      
+console.log("📞 CALL USER:", {
+  from: userId,
+  to,
+  onlineUsers: Array.from(onlineUsers.entries()),
+});
       // user offline
       if (!toSocketId) {
         socket.emit("error", "User is offline");

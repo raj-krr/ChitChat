@@ -76,7 +76,7 @@ peer.ontrack = (event) => {
 
     remoteAudioRef.current.muted = false;
     remoteAudioRef.current.volume = 1;
-    
+
   }
 };
 
@@ -113,14 +113,41 @@ try {
   }
   console.log("🎯 SENDERS:", peer.getSenders());
 
-  const offer = await peer.createOffer();
-  await peer.setLocalDescription(offer);
+await peer.setLocalDescription(await peer.createOffer());
+
+//  WAIT FOR ICE GATHERING (IMPORTANT)
+await new Promise((resolve) => {
+  let timeout = setTimeout(() => {
+    console.log("⏱ ICE timeout fallback");
+    resolve(true);
+  }, 2000); 
+
+  if (peer.iceGatheringState === "complete") {
+    clearTimeout(timeout);
+    resolve(true);
+  } else {
+    const checkState = () => {
+      if (peer.iceGatheringState === "complete") {
+        clearTimeout(timeout);
+        peer.removeEventListener("icegatheringstatechange", checkState);
+        resolve(true);
+      }
+    };
+    peer.addEventListener("icegatheringstatechange", checkState);
+  }
+});
+
+const offer = peer.localDescription;
 
   peer.onconnectionstatechange = () => {
   console.log("🔗 connection:", peer.connectionState);
 };
   callSocket.setCallType(type);
 
+    callSocket.setCallStatus("calling");
+  callSocket.setCallUser(user);
+  console.log("📤 EMITTING CALL USER", { to });
+  console.log("📡 SOCKET CONNECTED?", socket.connected);
   socket.emit("call-user", {
     to,
     offer,
@@ -128,8 +155,6 @@ try {
     type,
   });
 
-  callSocket.setCallStatus("calling");
-  callSocket.setCallUser(user);
 } catch (err) {
   console.error(" getUserMedia error", err);
 }
@@ -165,8 +190,30 @@ for (const candidate of iceQueueRef.current) {
   await peer.addIceCandidate(new RTCIceCandidate(candidate));
 }
 iceQueueRef.current = [];
-const answer = await peer.createAnswer();
-await peer.setLocalDescription(answer);
+await peer.setLocalDescription(await peer.createAnswer());
+
+await new Promise((resolve) => {
+  let timeout = setTimeout(() => {
+    console.log("⏱ ICE timeout fallback");
+    resolve(true);
+  }, 2000); 
+
+  if (peer.iceGatheringState === "complete") {
+    clearTimeout(timeout);
+    resolve(true);
+  } else {
+    const checkState = () => {
+      if (peer.iceGatheringState === "complete") {
+        clearTimeout(timeout);
+        peer.removeEventListener("icegatheringstatechange", checkState);
+        resolve(true);
+      }
+    };
+    peer.addEventListener("icegatheringstatechange", checkState);
+  }
+});
+    
+const answer = peer.localDescription;
 
 socket.emit("answer-call", { to: from, answer });
 
