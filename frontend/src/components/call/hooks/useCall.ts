@@ -34,13 +34,22 @@ return () => {
 //  CREATE PEER
 const createPeer = (remoteId: string) => {
 const peer = new RTCPeerConnection({
-iceServers: [
-{ urls: "stun:stun.l.google.com:19302" },
-{
-urls: "turn:openrelay.metered.ca:80",
-username: "openrelayproject",
-credential: "openrelayproject",
-},
+  iceServers: [
+    {
+      urls: [
+        "stun:stun.l.google.com:19302",
+      ],
+    },
+    {
+      urls: [
+        "turn:global.relay.metered.ca:80",
+        "turn:global.relay.metered.ca:80?transport=tcp",
+        "turn:global.relay.metered.ca:443",
+        "turns:global.relay.metered.ca:443?transport=tcp",
+      ],
+      username: "02d63ed20c3a50f2efc67dc5",
+      credential: "vcVLobIoZOjeg5L9",
+    },
   ],
 });
 
