@@ -110,6 +110,7 @@ console.log("AUDIO TRACK:", stream.getAudioTracks());
       console.log("🎤 sending tracks:", stream.getTracks());
     } catch (err) {
       console.error("Mic permission denied");
+      return;
     }
   };
 
@@ -196,39 +197,46 @@ if (video) {
 
   };
 
- const endCall = () => {
+const endCall = () => {
   const to = activeCallUserId;
 
   console.log("ENDING CALL TO:", to);
-console.log("❌ END CALL TRIGGERED");
+
   if (to) {
     socket.emit("end-call", { to });
   }
-
+if (!activeCallUserId) {
+  console.log("⚠️ ignoring endCall");
+  return;
+}
   cleanup();
 
+  //  only update state once
   callSocket.setCallStatus("idle");
   callSocket.setIncomingCall(null);
-   callSocket.setCallUser(null);
-   callSocket.setCallType("audio");
+  callSocket.setCallUser(null);
+  callSocket.setCallType("audio");
+
   setActiveCallUserId(null);
 };
 
-  useEffect(() => {
-    const handleEnd = () => {
-      cleanup();
+useEffect(() => {
+  const handleEnd = () => {
+    console.log("📴 call-ended received");
 
-      callSocket.setCallStatus("idle");
-      callSocket.setIncomingCall(null);
-      callSocket.setCallUser(null);
-    };
+    cleanup();
 
-    socket.on("call-ended", handleEnd);
+    callSocket.setCallStatus("idle");
+    callSocket.setIncomingCall(null);
+    callSocket.setCallUser(null);
+  };
 
-    return () => {
-      socket.off("call-ended", handleEnd);
-    };
-  }, [callSocket]);
+  socket.on("call-ended", handleEnd);
+
+  return () => {
+    socket.off("call-ended", handleEnd);
+  };
+}, []); // ❌ REMOVE callSocket dependency
 
   const isMutedRef = useRef(false);
 
