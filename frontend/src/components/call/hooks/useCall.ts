@@ -42,7 +42,6 @@ username: "openrelayproject",
 credential: "openrelayproject",
 },
   ],
-   iceTransportPolicy: "relay",
 });
 
 // ICE
@@ -163,12 +162,20 @@ const offer = peer.localDescription;
 
 //  ACCEPT CALL
   const acceptCall = async (from: string, offer: any, type = "audio") => {
-  if (peerRef.current) cleanup();
+ if (peerRef.current) {
+  console.log("♻️ resetting old peer");
+
+  peerRef.current.ontrack = null;
+  peerRef.current.onicecandidate = null;
+
+  peerRef.current.close();
+  peerRef.current = null;
+}
 const stream = await navigator.mediaDevices.getUserMedia({
 audio: true,
 video: type === "video",
 });
-
+console.log("🎤 LOCAL TRACKS:", stream.getTracks());
 localStreamRef.current = stream;
 setActiveCallUserId(from);
 
@@ -179,7 +186,8 @@ if (localVideoRef.current) {
 const peer = createPeer(from);
 peerRef.current = peer;
 
-for (const track of stream.getTracks()) {
+    for (const track of stream.getTracks()) {
+   console.log("🎯 adding track:", track.kind);
   peer.addTrack(track, stream);
 }
 
