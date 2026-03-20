@@ -41,7 +41,8 @@ urls: "turn:openrelay.metered.ca:80",
 username: "openrelayproject",
 credential: "openrelayproject",
 },
-],
+  ],
+   iceTransportPolicy: "relay",
 });
 
 // ICE
