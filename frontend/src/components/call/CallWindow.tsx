@@ -50,6 +50,10 @@ const { remoteVideoRef, localVideoRef, remoteAudioRef } = useGlobalCall();
       callSocket.incomingCall.offer,
       callSocket.incomingCall.type
     );
+   setTimeout(() => {
+  remoteVideoRef.current?.play().catch(() => {});
+  remoteAudioRef.current?.play().catch(() => {});
+}, 300); 
 
     callSocket.setIncomingCall(null);
   };
@@ -89,6 +93,12 @@ const { remoteVideoRef, localVideoRef, remoteAudioRef } = useGlobalCall();
     );
   }
 
+  <div
+  onClick={() => {
+    remoteVideoRef.current?.play().catch(() => {});
+    remoteAudioRef.current?.play().catch(() => {});
+  }}
+></div>
   // 📡 CALL SCREEN
   if (
     callSocket.callStatus === "calling" ||

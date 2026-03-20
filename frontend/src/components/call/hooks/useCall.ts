@@ -37,38 +37,28 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       }
     };
 
-    // 🔥 TRACK HANDLER (FINAL FIX)
-    peer.ontrack = (event) => {
-      const stream = event.streams[0];
+    //  TRACK HANDLER (FINAL FIX)
+peer.ontrack = (event) => {
+  const stream = event.streams[0];
 
-      console.log("🎥 TRACK RECEIVED:", stream);
+  console.log("🎥 TRACK RECEIVED:", stream);
 
-      const videoTracks = stream.getVideoTracks();
-      const audioTracks = stream.getAudioTracks();
+  if (remoteVideoRef.current) {
+    remoteVideoRef.current.srcObject = stream;
 
-      console.log("REMOTE VIDEO:", videoTracks);
-      console.log("REMOTE AUDIO:", audioTracks);
+    remoteVideoRef.current.play().catch(() => {
+      console.log("⚠️ video autoplay blocked");
+    });
+  }
 
-      // 🎥 VIDEO
-      if (videoTracks.length > 0 && remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
+  if (remoteAudioRef.current) {
+    remoteAudioRef.current.srcObject = stream;
 
-        setTimeout(() => {
-          remoteVideoRef.current?.play().catch(() => {
-            console.log("⚠️ video autoplay blocked");
-          });
-        }, 100);
-      }
-
-      // 🔊 AUDIO ONLY
-if (audioTracks.length > 0 && remoteAudioRef.current) {
-  remoteAudioRef.current.srcObject = stream;
-
-  remoteAudioRef.current.play().catch(() => {
-    console.log("⚠️ audio autoplay blocked");
-  });
-}
-    };
+    remoteAudioRef.current.play().catch(() => {
+      console.log("⚠️ audio autoplay blocked");
+    });
+  }
+};   
 
     return peer;
   };
@@ -170,20 +160,24 @@ if (audioTracks.length > 0 && remoteAudioRef.current) {
     }
   };
 
-  // 🧹 CLEANUP
-  const cleanup = () => {
-    peerRef.current?.close();
-    peerRef.current = null;
+const cleanup = () => {
+  peerRef.current?.close();
+  peerRef.current = null;
 
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+  localStreamRef.current?.getTracks().forEach((t) => t.stop());
 
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
-    if (localVideoRef.current) {
-  localVideoRef.current.srcObject = null;
-}
-  };
+  if (remoteVideoRef.current) {
+    remoteVideoRef.current.srcObject = null;
+  }
+
+  if (remoteAudioRef.current) {
+    remoteAudioRef.current.srcObject = null; // ✅ ADD THIS
+  }
+
+  if (localVideoRef.current) {
+    localVideoRef.current.srcObject = null;
+  }
+};
 
   // ❌ END CALL
   const endCall = () => {
