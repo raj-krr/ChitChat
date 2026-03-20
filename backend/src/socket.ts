@@ -52,7 +52,7 @@ export function initSocket(io: Server) {
       if (!to || !offer) return;
 
       const toSocketId = onlineUsers.get(to);
-      
+
 console.log("📞 CALL USER:", {
   from: userId,
   to,
@@ -121,7 +121,6 @@ console.log("📞 CALL USER:", {
           from: userId,
         });
       }
-      socket.emit("call-ended");
 
       ongoingCalls.delete(userId);
       ongoingCalls.delete(to);
