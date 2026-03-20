@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { socket } from "../apis/socket";
+import { useRef } from "react";
 
 const CallContext = createContext<any>(null);
 
@@ -11,6 +12,9 @@ export const CallProvider = ({ children }: any) => {
 
   const [callUser, setCallUser] = useState<any>(null);
   const [callType, setCallType] = useState<"audio" | "video">("audio");
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
 const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
   useEffect(() => {
     const onIncoming = ({ from, offer, user, type }: any) => {
@@ -63,6 +67,9 @@ const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
         setActiveCallUserId,
         callType,
         setCallType,
+          remoteVideoRef,
+        localVideoRef,
+  remoteAudioRef,
       }}
     >
       {children}

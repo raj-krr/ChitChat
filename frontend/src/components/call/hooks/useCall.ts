@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 import { socket } from "../../../apis/socket";
 import { useGlobalCall } from "../../../context/CallContext";
 
-export function useCall() {
+export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:any) {
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+
   const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
   const callSocket = useGlobalCall();
 
@@ -26,6 +27,7 @@ export function useCall() {
       ],
     });
 
+    // ICE
     peer.onicecandidate = (e) => {
       if (e.candidate) {
         socket.emit("ice-candidate", {
@@ -35,7 +37,7 @@ export function useCall() {
       }
     };
 
-    // 🔥🔥 FINAL TRACK HANDLER
+    // 🔥 TRACK HANDLER (FINAL FIX)
     peer.ontrack = (event) => {
       const stream = event.streams[0];
 
@@ -47,31 +49,25 @@ export function useCall() {
       console.log("REMOTE VIDEO:", videoTracks);
       console.log("REMOTE AUDIO:", audioTracks);
 
-      // 🎥 VIDEO CASE
-      if (videoTracks.length > 0) {
-        const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
+      // 🎥 VIDEO
+      if (videoTracks.length > 0 && remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
 
-        if (remoteVideo) {
-          remoteVideo.srcObject = stream;
-
-          setTimeout(() => {
-            remoteVideo.play().catch(() => {
-              console.log("⚠️ video autoplay blocked");
-            });
-          }, 100);
-        }
+        setTimeout(() => {
+          remoteVideoRef.current?.play().catch(() => {
+            console.log("⚠️ video autoplay blocked");
+          });
+        }, 100);
       }
 
-      // 🔊 AUDIO CASE (IMPORTANT)
-      if (videoTracks.length === 0 && audioTracks.length > 0) {
-        const audio = new Audio();
-        audio.srcObject = stream;
-        audio.autoplay = true;
+      // 🔊 AUDIO ONLY
+if (audioTracks.length > 0 && remoteAudioRef.current) {
+  remoteAudioRef.current.srcObject = stream;
 
-        audio.play().catch(() => {
-          console.log("⚠️ audio autoplay blocked");
-        });
-      }
+  remoteAudioRef.current.play().catch(() => {
+    console.log("⚠️ audio autoplay blocked");
+  });
+}
     };
 
     return peer;
@@ -89,11 +85,10 @@ export function useCall() {
         video: type === "video",
       });
 
-      // 🔥 local video
-      setTimeout(() => {
-        const localVideo = document.getElementById("local-video") as HTMLVideoElement;
-        if (localVideo) localVideo.srcObject = stream;
-      }, 0);
+      // 🔥 LOCAL VIDEO
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
 
       localStreamRef.current = stream;
       setActiveCallUserId(to);
@@ -131,10 +126,9 @@ export function useCall() {
       video: type === "video",
     });
 
-    setTimeout(() => {
-      const localVideo = document.getElementById("local-video") as HTMLVideoElement;
-      if (localVideo) localVideo.srcObject = stream;
-    }, 0);
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
 
     localStreamRef.current = stream;
     setActiveCallUserId(from);
@@ -183,8 +177,12 @@ export function useCall() {
 
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
 
-    const video = document.getElementById("remote-video") as HTMLVideoElement;
-    if (video) video.srcObject = null;
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+    if (localVideoRef.current) {
+  localVideoRef.current.srcObject = null;
+}
   };
 
   // ❌ END CALL
@@ -203,6 +201,7 @@ export function useCall() {
     setActiveCallUserId(null);
   };
 
+  // 🔚 SOCKET END
   useEffect(() => {
     const handleEnd = () => {
       console.log("📴 call-ended received");

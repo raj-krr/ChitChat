@@ -2,7 +2,7 @@ import ChatHeader from "./ChatHeader";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState} from "react";
 
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useChatSocket } from "./hooks/useChatSocket";
@@ -32,8 +32,9 @@ export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
   const [replyTo, setReplyTo] = useState<any>(null);
 
-  const call = useCall();
 
+const { remoteVideoRef, localVideoRef, remoteAudioRef } = useGlobalCall();
+  const call = useCall(remoteVideoRef, localVideoRef,remoteAudioRef );
 const callSocket = useGlobalCall();
   
   const {

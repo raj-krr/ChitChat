@@ -5,7 +5,9 @@ import { useCall } from "./hooks/useCall";
 
 export default function CallWindow() {
   const callSocket = useGlobalCall();
-  const call = useCall();
+
+const { remoteVideoRef, localVideoRef, remoteAudioRef } = useGlobalCall();
+  const call = useCall(remoteVideoRef, localVideoRef, remoteAudioRef);
 
   const [seconds, setSeconds] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -41,7 +43,7 @@ export default function CallWindow() {
     call.endCall();
   };
 
-  // ✅ ACCEPT CALL
+  // ✅ ACCEPT
   const handleAccept = async () => {
     await call.acceptCall(
       callSocket.incomingCall.from,
@@ -59,13 +61,13 @@ export default function CallWindow() {
     callSocket.setIncomingCall(null);
   };
 
-  // 📞 INCOMING CALL UI
+  // 📞 INCOMING
   if (callSocket.incomingCall) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white z-50">
         <img
           src={callSocket.callUser?.avatar || "/avatar-placeholder.png"}
-          className="w-28 h-28 rounded-full mb-4 border-4 border-white/20"
+          className="w-28 h-28 rounded-full mb-4"
         />
 
         <h2 className="text-2xl font-semibold">
@@ -75,17 +77,11 @@ export default function CallWindow() {
         <p className="text-white/60 mt-2">Incoming Call 📞</p>
 
         <div className="flex gap-10 mt-8">
-          <button
-            onClick={handleAccept}
-            className="bg-green-500 px-6 py-3 rounded-full"
-          >
+          <button onClick={handleAccept} className="bg-green-500 px-6 py-3 rounded-full">
             Accept
           </button>
 
-          <button
-            onClick={handleReject}
-            className="bg-red-500 px-6 py-3 rounded-full"
-          >
+          <button onClick={handleReject} className="bg-red-500 px-6 py-3 rounded-full">
             Reject
           </button>
         </div>
@@ -102,32 +98,31 @@ export default function CallWindow() {
       <div
         className="fixed inset-0 bg-black text-white z-50"
         onClick={() => {
-          // 🔥 fallback for autoplay block
-          const video = document.getElementById("remote-video") as HTMLVideoElement;
-          video?.play().catch(() => {});
+          remoteVideoRef.current?.play().catch(() => {});
         }}
       >
-        {/* 🎥 VIDEO MODE */}
+        {/* 🎥 VIDEO */}
         {isVideo && (
           <>
             <video
-              id="remote-video"
+              ref={remoteVideoRef}
               autoPlay
               playsInline
               className="absolute inset-0 w-full h-full object-cover"
             />
 
             <video
-              id="local-video"
+              ref={localVideoRef}
               autoPlay
               muted
               playsInline
-              className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover z-50"
+              className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover"
             />
           </>
         )}
 
-        {/* 📞 AUDIO MODE */}
+        <audio ref={remoteAudioRef} autoPlay playsInline />
+        {/* 📞 AUDIO */}
         {!isVideo && (
           <div className="flex flex-col items-center justify-center h-full">
             <img
@@ -138,8 +133,8 @@ export default function CallWindow() {
           </div>
         )}
 
-        {/* 👤 USER INFO */}
-        <div className="absolute top-12 left-0 right-0 text-center z-50">
+        {/* 👤 INFO */}
+        <div className="absolute top-12 left-0 right-0 text-center">
           <h2 className="text-xl font-semibold">
             {callSocket.callUser?.username}
           </h2>
@@ -154,9 +149,7 @@ export default function CallWindow() {
         </div>
 
         {/* 🎛 CONTROLS */}
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-8 z-50">
-
-          {/* 🔇 MUTE */}
+        <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-8">
           <button
             onClick={handleMute}
             className={`p-4 rounded-full ${
@@ -166,7 +159,6 @@ export default function CallWindow() {
             {isMuted ? "🔕" : "🎤"}
           </button>
 
-          {/* ❌ END */}
           <button
             onClick={handleEnd}
             className="bg-red-500 p-5 rounded-full"
