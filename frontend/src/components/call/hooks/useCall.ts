@@ -6,26 +6,24 @@ export function useCall() {
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
-
   const callSocket = useGlobalCall();
 
-  //CREATE PEER
+  // 🔥 CREATE PEER
   const createPeer = (remoteId: string) => {
     const peer = new RTCPeerConnection({
       iceServers: [
-  { urls: "stun:stun.l.google.com:19302" },
-
-  {
-    urls: "turn:openrelay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:openrelay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-]
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+      ],
     });
 
     peer.onicecandidate = (e) => {
@@ -36,131 +34,127 @@ export function useCall() {
         });
       }
     };
-peer.ontrack = (event) => {
-  const stream = event.streams[0];
 
-  console.log("🎥 TRACK RECEIVED:", stream);
+    // 🔥🔥 FINAL TRACK HANDLER
+    peer.ontrack = (event) => {
+      const stream = event.streams[0];
 
-  const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
+      console.log("🎥 TRACK RECEIVED:", stream);
 
-  //  ALWAYS attach stream
-  if (remoteVideo) {
-    remoteVideo.srcObject = stream;
+      const videoTracks = stream.getVideoTracks();
+      const audioTracks = stream.getAudioTracks();
 
-    setTimeout(() => {
-      remoteVideo.play().catch(() => {
-        console.log("⚠️ video autoplay blocked");
-      });
-    }, 100);
-  }
+      console.log("REMOTE VIDEO:", videoTracks);
+      console.log("REMOTE AUDIO:", audioTracks);
 
-};
+      // 🎥 VIDEO CASE
+      if (videoTracks.length > 0) {
+        const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
+
+        if (remoteVideo) {
+          remoteVideo.srcObject = stream;
+
+          setTimeout(() => {
+            remoteVideo.play().catch(() => {
+              console.log("⚠️ video autoplay blocked");
+            });
+          }, 100);
+        }
+      }
+
+      // 🔊 AUDIO CASE (IMPORTANT)
+      if (videoTracks.length === 0 && audioTracks.length > 0) {
+        const audio = new Audio();
+        audio.srcObject = stream;
+        audio.autoplay = true;
+
+        audio.play().catch(() => {
+          console.log("⚠️ audio autoplay blocked");
+        });
+      }
+    };
+
     return peer;
   };
 
-const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
+  // 🚀 START CALL
+  const startCall = async (
+    to: string,
+    user: any,
+    type: "audio" | "video" = "audio"
+  ) => {
     try {
-     const stream = await navigator.mediaDevices.getUserMedia({
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
-  },
- video: type === "video"
-  ? {
-      width: 1280,
-      height: 720,
-      facingMode: "user",
-    }
-  : false
-     });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === "video",
+      });
 
+      // 🔥 local video
       setTimeout(() => {
-  const localVideo = document.getElementById("local-video") as HTMLVideoElement;
-  if (localVideo) {
-    localVideo.srcObject = stream;
-  }
+        const localVideo = document.getElementById("local-video") as HTMLVideoElement;
+        if (localVideo) localVideo.srcObject = stream;
       }, 0);
-    
 
       localStreamRef.current = stream;
       setActiveCallUserId(to);
 
       const peer = createPeer(to);
       peerRef.current = peer;
-console.log(localStreamRef.current?.getAudioTracks());
+
       stream.getTracks().forEach((t) => peer.addTrack(t, stream));
-stream.getAudioTracks().forEach((track) => {
-  track.enabled = true; // 🔥 FORCE ENABLE
-  console.log("🎤 mic track:", track.enabled, track.readyState);
-  console.log("VIDEO TRACK:", stream.getVideoTracks());
-console.log("AUDIO TRACK:", stream.getAudioTracks());
-});
+
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
 
-        callSocket.setCallType(type);
+      callSocket.setCallType(type);
+
       socket.emit("call-user", {
         to,
         offer,
-        user, 
+        user,
         type,
       });
 
       callSocket.setCallStatus("calling");
       callSocket.setCallUser(user);
-      console.log("START CALL TYPE:", type);
-      console.log("🎤 sending tracks:", stream.getTracks());
+
+      console.log("🚀 START CALL:", type);
     } catch (err) {
-      console.error("Mic permission denied");
-      return;
+      console.error("❌ getUserMedia error", err);
     }
   };
 
- const acceptCall = async (from: string, offer: any, type = "audio") => {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video:
-      type === "video"
-        ? {
-            width: 1280,
-            height: 720,
-            facingMode: "user",
-          }
-        : false,
-  });
+  // ✅ ACCEPT CALL
+  const acceptCall = async (from: string, offer: any, type = "audio") => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: type === "video",
+    });
 
-  setTimeout(() => {
-    const localVideo = document.getElementById("local-video") as HTMLVideoElement;
-    if (localVideo) {
-      localVideo.srcObject = stream;
-    }
-  }, 0);
+    setTimeout(() => {
+      const localVideo = document.getElementById("local-video") as HTMLVideoElement;
+      if (localVideo) localVideo.srcObject = stream;
+    }, 0);
 
-  localStreamRef.current = stream;
-  setActiveCallUserId(from);
+    localStreamRef.current = stream;
+    setActiveCallUserId(from);
 
-  const peer = createPeer(from);
-  peerRef.current = peer;
+    const peer = createPeer(from);
+    peerRef.current = peer;
 
-  //  ADD TRACKS FIRST
-  stream.getTracks().forEach((t) => peer.addTrack(t, stream));
+    stream.getTracks().forEach((t) => peer.addTrack(t, stream));
 
-  console.log("🎤 mic track:", stream.getAudioTracks());
-  console.log("🎥 video track:", stream.getVideoTracks());
+    await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
-  //  THEN set remote
-  await peer.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
 
-  //  THEN create answer
-  const answer = await peer.createAnswer();
-  await peer.setLocalDescription(answer);
+    socket.emit("answer-call", { to: from, answer });
 
-  socket.emit("answer-call", { to: from, answer });
-
-  callSocket.setCallStatus("connected");
+    callSocket.setCallStatus("connected");
   };
-  
+
+  // ✅ ANSWER RECEIVED
   const setRemoteAnswer = async (answer: any) => {
     const peer = peerRef.current;
     if (!peer) return;
@@ -168,79 +162,66 @@ console.log("AUDIO TRACK:", stream.getAudioTracks());
     if (peer.signalingState === "stable") return;
 
     await peer.setRemoteDescription(new RTCSessionDescription(answer));
-
     callSocket.setCallStatus("connected");
   };
 
-const addIceCandidate = async (candidate: any) => {
-  try {
-    if (peerRef.current?.remoteDescription) {
-      await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+  // ✅ ICE
+  const addIceCandidate = async (candidate: any) => {
+    try {
+      if (peerRef.current?.remoteDescription) {
+        await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    } catch (e) {
+      console.log("ICE error", e);
     }
-  } catch (e) {
-    console.log("ICE error", e);
-  }
-};
+  };
 
+  // 🧹 CLEANUP
   const cleanup = () => {
     peerRef.current?.close();
     peerRef.current = null;
 
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
 
-    const audio = document.getElementById("remote-audio");
-    if (audio) {
-      (audio as HTMLAudioElement).srcObject = null;
-    }
-
-    const video = document.getElementById("remote-video");
-if (video) {
-  (video as HTMLVideoElement).srcObject = null;
-}
-
+    const video = document.getElementById("remote-video") as HTMLVideoElement;
+    if (video) video.srcObject = null;
   };
 
-const endCall = () => {
-  const to = activeCallUserId;
+  // ❌ END CALL
+  const endCall = () => {
+    const to = activeCallUserId;
 
-  console.log("ENDING CALL TO:", to);
-
-  if (to) {
-    socket.emit("end-call", { to });
-  }
-if (!activeCallUserId) {
-  console.log("⚠️ ignoring endCall");
-  return;
-}
-  cleanup();
-
-  //  only update state once
-  callSocket.setCallStatus("idle");
-  callSocket.setIncomingCall(null);
-  callSocket.setCallUser(null);
-  callSocket.setCallType("audio");
-
-  setActiveCallUserId(null);
-};
-
-useEffect(() => {
-  const handleEnd = () => {
-    console.log("📴 call-ended received");
+    if (to) socket.emit("end-call", { to });
 
     cleanup();
 
     callSocket.setCallStatus("idle");
     callSocket.setIncomingCall(null);
     callSocket.setCallUser(null);
+    callSocket.setCallType("audio");
+
+    setActiveCallUserId(null);
   };
 
-  socket.on("call-ended", handleEnd);
+  useEffect(() => {
+    const handleEnd = () => {
+      console.log("📴 call-ended received");
 
-  return () => {
-    socket.off("call-ended", handleEnd);
-  };
-}, []); // ❌ REMOVE callSocket dependency
+      cleanup();
 
+      callSocket.setCallStatus("idle");
+      callSocket.setIncomingCall(null);
+      callSocket.setCallUser(null);
+    };
+
+    socket.on("call-ended", handleEnd);
+
+    return () => {
+      socket.off("call-ended", handleEnd);
+    };
+  }, []);
+
+  // 🔇 MUTE
   const isMutedRef = useRef(false);
 
   const toggleMute = () => {
@@ -252,10 +233,8 @@ useEffect(() => {
       track.enabled = !isMutedRef.current;
     });
 
-    return isMutedRef.current; 
+    return isMutedRef.current;
   };
-
-
 
   return {
     startCall,

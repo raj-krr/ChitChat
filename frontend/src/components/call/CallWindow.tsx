@@ -8,8 +8,10 @@ export default function CallWindow() {
   const call = useCall();
 
   const [seconds, setSeconds] = useState(0);
-const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
   const isVideo = callSocket.callType === "video";
+
   // ⏱️ TIMER
   useEffect(() => {
     if (callSocket.callStatus !== "connected") return;
@@ -39,12 +41,14 @@ const [isMuted, setIsMuted] = useState(false);
     call.endCall();
   };
 
-  const handleAccept = () => {
-    call.acceptCall(
+  // ✅ ACCEPT CALL
+  const handleAccept = async () => {
+    await call.acceptCall(
       callSocket.incomingCall.from,
       callSocket.incomingCall.offer,
-        callSocket.incomingCall.type,
+      callSocket.incomingCall.type
     );
+
     callSocket.setIncomingCall(null);
   };
 
@@ -55,7 +59,7 @@ const [isMuted, setIsMuted] = useState(false);
     callSocket.setIncomingCall(null);
   };
 
-  // 📞 INCOMING
+  // 📞 INCOMING CALL UI
   if (callSocket.incomingCall) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white z-50">
@@ -89,42 +93,51 @@ const [isMuted, setIsMuted] = useState(false);
     );
   }
 
-  // 📡 CALLING + CONNECTED
+  // 📡 CALL SCREEN
   if (
     callSocket.callStatus === "calling" ||
     callSocket.callStatus === "connected"
   ) {
     return (
-      <div className="fixed inset-0 bg-black text-white z-50">
+      <div
+        className="fixed inset-0 bg-black text-white z-50"
+        onClick={() => {
+          // 🔥 fallback for autoplay block
+          const video = document.getElementById("remote-video") as HTMLVideoElement;
+          video?.play().catch(() => {});
+        }}
+      >
+        {/* 🎥 VIDEO MODE */}
+        {isVideo && (
+          <>
+            <video
+              id="remote-video"
+              autoPlay
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
 
-   {isVideo && (
-  <>
-    <video
-      id="remote-video"
-      autoPlay
-      playsInline
-      className="absolute inset-0 w-full h-full object-cover"
-    />
-
-    <video
-      id="local-video"
-      autoPlay
-      muted
-      playsInline
-      className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover z-50"
-    />
-  </>
-)}
-
-        {!isVideo && (
-  <div className="flex flex-col items-center justify-center h-full">
-    <img
-      src={callSocket.callUser?.avatar}
-      className="w-28 h-28 rounded-full mb-4"
-    />
-    <h2>{callSocket.callUser?.username}</h2>
-  </div>
+            <video
+              id="local-video"
+              autoPlay
+              muted
+              playsInline
+              className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover z-50"
+            />
+          </>
         )}
+
+        {/* 📞 AUDIO MODE */}
+        {!isVideo && (
+          <div className="flex flex-col items-center justify-center h-full">
+            <img
+              src={callSocket.callUser?.avatar}
+              className="w-28 h-28 rounded-full mb-4"
+            />
+            <h2>{callSocket.callUser?.username}</h2>
+          </div>
+        )}
+
         {/* 👤 USER INFO */}
         <div className="absolute top-12 left-0 right-0 text-center z-50">
           <h2 className="text-xl font-semibold">
@@ -153,8 +166,6 @@ const [isMuted, setIsMuted] = useState(false);
             {isMuted ? "🔕" : "🎤"}
           </button>
 
-
-
           {/* ❌ END */}
           <button
             onClick={handleEnd}
@@ -162,7 +173,6 @@ const [isMuted, setIsMuted] = useState(false);
           >
             📞
           </button>
-
         </div>
       </div>
     );
