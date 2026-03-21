@@ -126,9 +126,6 @@ export function initSocket(io: Server) {
     socket.on("ice-candidate", ({ to, candidate }) => {
       if (!to || !candidate) return;
 
-      // ✅ REMOVED the ongoingCalls guard — it was silently dropping
-      // the receiver's ICE candidates which arrived before answer-call
-      // was processed. Both sides are now registered in call-user anyway.
 
       const toSocketId = onlineUsers.get(to);
       if (toSocketId) {
