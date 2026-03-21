@@ -10,36 +10,47 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
   const callSocket = useGlobalCall();
 
-  // ✅ Two separate ICE queues — one per role.
-  // The caller receives ICE from the receiver (flushed in setRemoteAnswer).
-  // The receiver receives ICE from the caller (flushed in acceptCall).
-  // Using a single shared queue caused each role to flush the other's candidates.
-  const callerIceQueueRef = useRef<any[]>([]);   // flushed by setRemoteAnswer
-  const receiverIceQueueRef = useRef<any[]>([]); // flushed by acceptCall
+  const callerIceQueueRef = useRef<any[]>([]);   
+  const receiverIceQueueRef = useRef<any[]>([]); 
 
-  // SOCKET LISTENERS (ONLY ONCE)
+  const setRemoteAnswerRef = useRef<((answer: any) => Promise<void>) | undefined>(undefined);
+  const addIceCandidateRef = useRef<((candidate: any) => Promise<void>) | undefined>(undefined);
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
+
+  // SOCKET LISTENERS
   useEffect(() => {
     const handleAnswer = ({ answer }: any) => {
       console.log("📩 answer received");
-      setRemoteAnswer(answer);
+      setRemoteAnswerRef.current?.(answer);
     };
 
     const handleIce = ({ candidate }: any) => {
-      addIceCandidate(candidate);
+      addIceCandidateRef.current?.(candidate);
+    };
+
+    //  call-ended now triggers cleanup so peer/tracks don't dangle
+    const handleCallEnded = () => {
+      console.log("📴 remote ended call — cleaning up");
+      cleanupRef.current?.();
+      callSocket.setCallStatus("idle");
+      callSocket.setIncomingCall(null);
+      callSocket.setCallUser(null);
+      setActiveCallUserId(null);
     };
 
     socket.on("call-answered", handleAnswer);
     socket.on("ice-candidate", handleIce);
+    socket.on("call-ended", handleCallEnded);
 
     return () => {
       socket.off("call-answered", handleAnswer);
       socket.off("ice-candidate", handleIce);
+      socket.off("call-ended", handleCallEnded);
     };
   }, []);
 
   // CREATE PEER
   const createPeer = (remoteId: string) => {
-    // Always reset remoteStream so ontrack gets a fresh stream each call
     remoteStreamRef.current = new MediaStream();
 
     const peer = new RTCPeerConnection({
@@ -121,7 +132,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       cleanup();
     }
 
-    // ✅ Clear both queues on a fresh call
     callerIceQueueRef.current = [];
     receiverIceQueueRef.current = [];
 
@@ -174,7 +184,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       peerRef.current = null;
     }
 
-    // ✅ Clear both queues on a fresh call
     callerIceQueueRef.current = [];
     receiverIceQueueRef.current = [];
 
@@ -201,7 +210,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
-    // ✅ Flush the RECEIVER's queue (candidates from caller that arrived early)
+    // Flush receiver's queue (caller's ICE that arrived before offer was set)
     for (const candidate of receiverIceQueueRef.current) {
       await peer.addIceCandidate(new RTCIceCandidate(candidate));
     }
@@ -221,7 +230,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
 
-    // ✅ Flush the CALLER's queue (candidates from receiver that arrived early)
+    // Flush caller's queue (receiver's ICE that arrived before answer was set)
     for (const candidate of callerIceQueueRef.current) {
       await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
     }
@@ -229,15 +238,15 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     callSocket.setCallStatus("connected");
   };
+  // ✅ Assign to ref so the stale socket listener always calls the latest version
+  setRemoteAnswerRef.current = setRemoteAnswer;
 
-  // ICE CANDIDATE — queues into BOTH, only the right one gets flushed per role
+  // ICE CANDIDATE
   const addIceCandidate = async (candidate: any) => {
     if (!peerRef.current) return;
 
     if (!peerRef.current.remoteDescription) {
       console.log("⏳ ICE queued");
-      // We don't know yet if we're caller or receiver, so queue into both.
-      // acceptCall flushes receiverIceQueueRef; setRemoteAnswer flushes callerIceQueueRef.
       callerIceQueueRef.current.push(candidate);
       receiverIceQueueRef.current.push(candidate);
       return;
@@ -249,6 +258,8 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       console.log("ICE error", e);
     }
   };
+  // ✅ Assign to ref so the stale socket listener always calls the latest version
+  addIceCandidateRef.current = addIceCandidate;
 
   // CLEANUP
   const cleanup = () => {
@@ -272,6 +283,8 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     remoteStreamRef.current = null;
   };
+  // ✅ Assign to ref so the stale socket listener always calls the latest version
+  cleanupRef.current = cleanup;
 
   // END CALL
   const endCall = () => {

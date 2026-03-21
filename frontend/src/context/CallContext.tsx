@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { socket } from "../apis/socket";
-import { useRef } from "react";
 
 const CallContext = createContext<any>(null);
 
@@ -15,51 +14,44 @@ export const CallProvider = ({ children }: any) => {
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
-const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
+  const [activeCallUserId, setActiveCallUserId] = useState<string | null>(null);
+
+  const callStatusRef = useRef(callStatus);
+  useEffect(() => {
+    callStatusRef.current = callStatus;
+  }, [callStatus]);
+
   useEffect(() => {
     const onIncoming = ({ from, offer, user, type }: any) => {
-       if (callStatusRef.current === "connected") return;
+      // ✅ Ignore if already in a call
+      if (callStatusRef.current === "connected") return;
+
       setIncomingCall({ from, offer, type });
-      setCallUser(user); 
+      setCallUser(user);
       setCallStatus("ringing");
       setCallType(type);
-      
-    };
-
-    const onAnswered = () => {
-      setCallStatus("connected");
     };
 
     const onRejected = () => {
       setCallStatus("idle");
       setIncomingCall(null);
       setCallUser(null);
-       setActiveCallUserId(null);
+      setActiveCallUserId(null);
     };
 
-  const onEnded = () => {
-  setCallStatus("idle");
-  setIncomingCall(null);
-  setCallUser(null);
-  setActiveCallUserId(null); 
-};
+    // ✅ call-ended is intentionally NOT handled here anymore.
+    // useCall handles it directly so cleanup() is always called
+    // before state resets. Handling it in both places caused a race
+    // where state reset before the peer was closed.
 
     socket.on("incoming-call", onIncoming);
     socket.on("call-rejected", onRejected);
-    socket.on("call-ended", onEnded);
 
     return () => {
       socket.off("incoming-call", onIncoming);
-      socket.off("call-answered", onAnswered);
       socket.off("call-rejected", onRejected);
-      socket.off("call-ended", onEnded);
     };
   }, []);
-  const callStatusRef = useRef(callStatus);
-
-useEffect(() => {
-  callStatusRef.current = callStatus;
-}, [callStatus]);
 
   return (
     <CallContext.Provider
@@ -70,13 +62,13 @@ useEffect(() => {
         setCallStatus,
         callUser,
         setCallUser,
-         activeCallUserId,
+        activeCallUserId,
         setActiveCallUserId,
         callType,
         setCallType,
-          remoteVideoRef,
+        remoteVideoRef,
         localVideoRef,
-  remoteAudioRef,
+        remoteAudioRef,
       }}
     >
       {children}
