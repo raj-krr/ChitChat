@@ -7,6 +7,7 @@ export default function CallWindow() {
   const callSocket = useGlobalCall();
   const { remoteVideoRef, localVideoRef, remoteAudioRef } = useGlobalCall();
 
+
   const call = useCall(remoteVideoRef, localVideoRef, remoteAudioRef);
 
   const [seconds, setSeconds] = useState(0);
@@ -19,7 +20,14 @@ export default function CallWindow() {
     callSocket.callStatus === "connected";
   const isConnected = callSocket.callStatus === "connected";
 
-  const user = callSocket.callUser;
+  // ✅ FIX: callUser is always the OTHER person.
+  // On caller side: set from ChatWindow as the receiver's chat object.
+  // On receiver side: set from incoming-call socket event as the caller's user object.
+  // We normalize to always pick username/avatar correctly from either shape.
+  const remoteUser = callSocket.callUser;
+  const remoteName = remoteUser?.username || remoteUser?.name || "Unknown";
+  const remoteAvatar = remoteUser?.avatar || "/avatar-placeholder.png";
+  const remoteEmail = remoteUser?.email || "";
 
   // ⏱ TIMER
   useEffect(() => {
@@ -103,36 +111,54 @@ export default function CallWindow() {
         playsInline
         style={
           isActive && isVideo
-            ? { position: "fixed", bottom: 100, right: 16, width: 110, height: 160, objectFit: "cover", borderRadius: 14, border: "2px solid rgba(255,255,255,0.25)", zIndex: 52, boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }
+            ? {
+                position: "fixed",
+                // ✅ FIX: use env(safe-area-inset-bottom) so it clears
+                // the mobile bottom navbar on iOS/Android
+                bottom: "calc(env(safe-area-inset-bottom, 0px) + 110px)",
+                right: 16,
+                width: 110,
+                height: 160,
+                objectFit: "cover",
+                borderRadius: 14,
+                border: "2px solid rgba(255,255,255,0.25)",
+                zIndex: 52,
+                boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+              }
             : { display: "none" }
         }
       />
 
       {/* ─── INCOMING CALL UI ─── */}
       {callSocket.incomingCall && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-          style={{ background: "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" }}
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          // ✅ FIX: padding-bottom accounts for mobile navbar safe area
+          style={{
+            background: "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          }}
         >
           {/* Ripple rings */}
           <div className="relative flex items-center justify-center mb-8">
             <span className="absolute w-36 h-36 rounded-full bg-white/5 animate-ping" style={{ animationDuration: "1.5s" }} />
             <span className="absolute w-28 h-28 rounded-full bg-white/10 animate-ping" style={{ animationDuration: "1.5s", animationDelay: "0.3s" }} />
             <img
-              src={user?.avatar || "/avatar-placeholder.png"}
+              src={remoteAvatar}
               className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-2xl relative z-10"
             />
           </div>
 
+          {/* ✅ FIX: show caller's name correctly */}
           <p className="text-white/60 text-sm font-medium tracking-widest uppercase mb-2">
             Incoming {callSocket.callType} call
           </p>
-          <h2 className="text-white text-3xl font-bold mb-1">{user?.username}</h2>
-          {user?.email && (
-            <p className="text-white/40 text-sm mb-10">{user.email}</p>
+          <h2 className="text-white text-3xl font-bold mb-1">{remoteName}</h2>
+          {remoteEmail && (
+            <p className="text-white/40 text-sm mb-10">{remoteEmail}</p>
           )}
 
           <div className="flex gap-16 mt-2">
-            {/* Reject */}
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={handleReject}
@@ -145,7 +171,6 @@ export default function CallWindow() {
               <span className="text-white/50 text-xs">Decline</span>
             </div>
 
-            {/* Accept */}
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={handleAccept}
@@ -165,14 +190,18 @@ export default function CallWindow() {
       {isActive && (
         <div
           className="fixed inset-0 text-white z-50 flex flex-col"
-          style={{ background: isVideo ? "transparent" : "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" }}
+          style={{
+            background: isVideo
+              ? "transparent"
+              : "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          }}
         >
-          {/* TOP — user info */}
+          {/* TOP — remote user info */}
           <div className="flex flex-col items-center pt-14 pb-4">
             {!isVideo && (
               <div className="relative mb-5">
                 <img
-                  src={user?.avatar || "/avatar-placeholder.png"}
+                  src={remoteAvatar}
                   className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-2xl"
                 />
                 {isConnected && (
@@ -181,10 +210,11 @@ export default function CallWindow() {
               </div>
             )}
 
-            <h2 className="text-2xl font-bold tracking-tight">{user?.username}</h2>
+            {/* ✅ FIX: always shows the remote person's name, never your own */}
+            <h2 className="text-2xl font-bold tracking-tight">{remoteName}</h2>
 
-            {user?.email && !isVideo && (
-              <p className="text-white/40 text-sm mt-0.5">{user.email}</p>
+            {remoteEmail && !isVideo && (
+              <p className="text-white/40 text-sm mt-0.5">{remoteEmail}</p>
             )}
 
             <div className="mt-2 flex items-center gap-2">
@@ -194,16 +224,23 @@ export default function CallWindow() {
                   <span className="text-green-400 text-sm font-medium">{formatTime(seconds)}</span>
                 </>
               ) : (
-                <span className="text-white/50 text-sm animate-pulse">Calling...</span>
+                <span className="text-white/50 text-sm animate-pulse">
+                  Calling {remoteName}...
+                </span>
               )}
             </div>
           </div>
 
-          {/* MIDDLE — spacer */}
           <div className="flex-1" />
 
-          {/* BOTTOM — controls */}
-          <div className="pb-12 px-8">
+          {/* BOTTOM — controls
+            ✅ FIX: pb uses safe-area-inset-bottom so buttons never sit
+            behind the mobile bottom navbar on iOS/Android
+          */}
+          <div
+            className="px-8"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 16px) + 24px)" }}
+          >
             {/* Status pills */}
             <div className="flex justify-center gap-3 mb-6">
               {isMuted && (
@@ -216,7 +253,6 @@ export default function CallWindow() {
                   🔈 Speaker off
                 </span>
               )}
-
             </div>
 
             {/* Control buttons */}
@@ -229,12 +265,15 @@ export default function CallWindow() {
                 onClick={handleMute}
                 icon={
                   isMuted ? (
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                      <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M3 3l18 18M9 9v3a3 3 0 004.12 2.76M15 9.34V6a3 3 0 00-5.94-.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                      <path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6" />
+                      <path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23M12 19v4M8 23h8" />
                     </svg>
                   ) : (
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                      <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM19 11a7 7 0 01-14 0H3a9 9 0 0018 0h-2zm-7 11v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                      <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
                     </svg>
                   )
                 }
@@ -242,7 +281,7 @@ export default function CallWindow() {
 
               {/* Speaker */}
               <ControlBtn
-                label={isSpeakerMuted ? "Speaker" : "Speaker"}
+                label={isSpeakerMuted ? "Unmute" : "Speaker"}
                 active={isSpeakerMuted}
                 onClick={handleSpeaker}
                 icon={
@@ -261,7 +300,7 @@ export default function CallWindow() {
                 }
               />
 
-              {/* END CALL — center, bigger */}
+              {/* END CALL */}
               <button
                 onClick={handleEnd}
                 className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-400 active:scale-95 transition-all flex items-center justify-center shadow-xl shadow-red-500/40"
@@ -271,7 +310,7 @@ export default function CallWindow() {
                 </svg>
               </button>
 
-              {/* Switch Camera (video only) — front/rear swap */}
+              {/* Switch Camera (video only) */}
               {isVideo ? (
                 <ControlBtn
                   label="Flip"
@@ -281,8 +320,7 @@ export default function CallWindow() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
                       <path d="M23 7l-7 5 7 5V7z" />
                       <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                      <path d="M7 3l-3 3 3 3" />
-                      <path d="M4 6h5" />
+                      <path d="M7 3l-3 3 3 3M4 6h5" />
                     </svg>
                   }
                 />
@@ -300,12 +338,8 @@ export default function CallWindow() {
   );
 }
 
-// ─── REUSABLE CONTROL BUTTON ───
 function ControlBtn({
-  icon,
-  label,
-  active,
-  onClick,
+  icon, label, active, onClick,
 }: {
   icon: React.ReactNode;
   label: string;

@@ -141,7 +141,11 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
         video: type === "video",
       });
 
@@ -189,7 +193,11 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     isSpeakerMutedRef.current = false;
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
       video: type === "video",
     });
 
