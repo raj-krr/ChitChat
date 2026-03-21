@@ -13,6 +13,9 @@ export default function CallWindow() {
   const [isMuted, setIsMuted] = useState(false);
 
   const isVideo = callSocket.callType === "video";
+  const isActive =
+    callSocket.callStatus === "calling" ||
+    callSocket.callStatus === "connected";
 
   // ⏱ TIMER
   useEffect(() => {
@@ -47,7 +50,6 @@ export default function CallWindow() {
     }
   }, [callSocket.callStatus]);
 
-  // 🎤 MUTE
   const handleMute = () => {
     const muted = call.toggleMute();
     setIsMuted(muted);
@@ -57,7 +59,6 @@ export default function CallWindow() {
     call.endCall();
   };
 
-  // ✅ ACCEPT CALL
   const handleAccept = async () => {
     await call.acceptCall(
       callSocket.incomingCall.from,
@@ -65,7 +66,6 @@ export default function CallWindow() {
       callSocket.incomingCall.type
     );
 
-    // 🔥 USER INTERACTION UNLOCK
     if (remoteAudioRef.current) {
       remoteAudioRef.current.muted = false;
       remoteAudioRef.current.volume = 1;
@@ -78,25 +78,65 @@ export default function CallWindow() {
   };
 
   const handleReject = () => {
-    socket.emit("reject-call", {
-      to: callSocket.incomingCall.from,
-    });
+    socket.emit("reject-call", { to: callSocket.incomingCall.from });
     callSocket.setIncomingCall(null);
   };
 
   return (
     <>
       {/*
-        ✅ ALWAYS mounted — even during "ringing".
-        This ensures remoteAudioRef.current is never null
-        when acceptCall's ontrack fires and tries to play audio.
-        visibility:hidden keeps it out of view but in the DOM.
+        ✅ ALL 3 MEDIA ELEMENTS are ALWAYS in the DOM — never conditionally rendered.
+        We only toggle visibility with CSS.
       */}
+
+      {/* 🔊 AUDIO — always hidden, always mounted */}
       <audio
         ref={remoteAudioRef}
         autoPlay
         playsInline
         style={{ display: "none" }}
+      />
+
+      {/* 🎥 REMOTE VIDEO — hidden unless active video call */}
+      <video
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
+        style={
+          isActive && isVideo
+            ? {
+                position: "fixed",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                zIndex: 50,
+              }
+            : { display: "none" }
+        }
+      />
+
+      {/* 📷 LOCAL VIDEO — hidden unless active video call */}
+      <video
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        style={
+          isActive && isVideo
+            ? {
+                position: "fixed",
+                bottom: "24px",
+                right: "24px",
+                width: "128px",
+                height: "176px",
+                objectFit: "cover",
+                borderRadius: "12px",
+                border: "1px solid rgba(255,255,255,0.3)",
+                zIndex: 51,
+              }
+            : { display: "none" }
+        }
       />
 
       {/* 📞 INCOMING CALL UI */}
@@ -131,30 +171,11 @@ export default function CallWindow() {
         </div>
       )}
 
-      {/* 📡 ACTIVE CALL UI */}
-      {(callSocket.callStatus === "calling" ||
-        callSocket.callStatus === "connected") && (
-        <div className="fixed inset-0 bg-black text-white z-50">
-          {/* 🎥 VIDEO MODE */}
-          {isVideo && (
-            <>
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-
-              <video
-                ref={localVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="absolute bottom-6 right-6 w-32 h-44 rounded-xl border border-white/30 object-cover"
-              />
-            </>
-          )}
-
+      {/* 📡 ACTIVE CALL UI — overlay for controls and user info */}
+      {isActive && (
+        <div className="fixed inset-0 text-white z-50"
+          style={{ background: isVideo ? "transparent" : "black" }}
+        >
           {/* 👤 USER INFO */}
           <div className="absolute top-12 left-0 right-0 text-center">
             <h2 className="text-xl font-semibold">
@@ -181,7 +202,10 @@ export default function CallWindow() {
               {isMuted ? "🔕" : "🎤"}
             </button>
 
-            <button onClick={handleEnd} className="bg-red-500 p-5 rounded-full">
+            <button
+              onClick={handleEnd}
+              className="bg-red-500 p-5 rounded-full"
+            >
               📞
             </button>
           </div>
