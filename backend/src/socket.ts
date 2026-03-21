@@ -32,7 +32,7 @@ export function initSocket(io: Server) {
 
   io.on("connection", (socket: Socket) => {
     const userId = socket.data.userId as string;
-    console.log(" SOCKET CONNECTED:", userId);
+    console.log("✅ SOCKET CONNECTED:", userId);
 
     socket.emit("online-users", Array.from(onlineUsers.keys()));
 
@@ -46,37 +46,34 @@ export function initSocket(io: Server) {
       }
     });
 
-  
-
     socket.on("call-user", ({ to, offer, user, type }) => {
       if (!to || !offer) return;
 
       const toSocketId = onlineUsers.get(to);
 
-console.log("📞 CALL USER:", {
-  from: userId,
-  to,
-  onlineUsers: Array.from(onlineUsers.entries()),
-});
-      // user offline
+      console.log("📞 CALL USER:", {
+        from: userId,
+        to,
+        onlineUsers: Array.from(onlineUsers.entries()),
+      });
+
       if (!toSocketId) {
         socket.emit("error", "User is offline");
         return;
       }
 
-      //  caller already in call
       if (ongoingCalls.has(userId)) {
         socket.emit("error", "You are already in a call");
         return;
       }
 
-      //  receiver busy
       if (ongoingCalls.has(to)) {
         socket.emit("call-busy");
         return;
       }
 
-      //  mark both users in call
+      // ✅ Register BOTH sides immediately so ICE candidates
+      // from the receiver aren't dropped before answer-call arrives
       ongoingCalls.set(userId, to);
       ongoingCalls.set(to, userId);
 
@@ -91,6 +88,10 @@ console.log("📞 CALL USER:", {
     socket.on("answer-call", ({ to, answer }) => {
       if (!to || !answer) return;
 
+      // Ensure both sides are marked (in case of race condition)
+      if (!ongoingCalls.has(userId)) ongoingCalls.set(userId, to);
+      if (!ongoingCalls.has(to)) ongoingCalls.set(to, userId);
+
       const toSocketId = onlineUsers.get(to);
       if (toSocketId) {
         io.to(toSocketId).emit("call-answered", {
@@ -104,9 +105,7 @@ console.log("📞 CALL USER:", {
       const toSocketId = onlineUsers.get(to);
 
       if (toSocketId) {
-        io.to(toSocketId).emit("call-rejected", {
-          from: userId,
-        });
+        io.to(toSocketId).emit("call-rejected", { from: userId });
       }
 
       ongoingCalls.delete(userId);
@@ -117,9 +116,7 @@ console.log("📞 CALL USER:", {
       const toSocketId = onlineUsers.get(to);
 
       if (toSocketId) {
-        io.to(toSocketId).emit("call-ended", {
-          from: userId,
-        });
+        io.to(toSocketId).emit("call-ended", { from: userId });
       }
 
       ongoingCalls.delete(userId);
@@ -129,11 +126,11 @@ console.log("📞 CALL USER:", {
     socket.on("ice-candidate", ({ to, candidate }) => {
       if (!to || !candidate) return;
 
-      // only allow if user is in a call
-      if (!ongoingCalls.has(userId)) return;
+      // ✅ REMOVED the ongoingCalls guard — it was silently dropping
+      // the receiver's ICE candidates which arrived before answer-call
+      // was processed. Both sides are now registered in call-user anyway.
 
       const toSocketId = onlineUsers.get(to);
-
       if (toSocketId) {
         io.to(toSocketId).emit("ice-candidate", {
           from: userId,
@@ -180,7 +177,6 @@ console.log("📞 CALL USER:", {
       }
 
       const toSocketId = onlineUsers.get(data.to);
-
       if (toSocketId) {
         io.to(toSocketId).emit("receive_message", {
           from: userId,
@@ -198,16 +194,11 @@ console.log("📞 CALL USER:", {
       onlineUsers.delete(userId);
 
       const partner = ongoingCalls.get(userId);
-
       if (partner) {
         const partnerSocket = onlineUsers.get(partner);
-
         if (partnerSocket) {
-          io.to(partnerSocket).emit("call-ended", {
-            from: userId,
-          });
+          io.to(partnerSocket).emit("call-ended", { from: userId });
         }
-
         ongoingCalls.delete(userId);
         ongoingCalls.delete(partner);
       }
@@ -220,13 +211,11 @@ console.log("📞 CALL USER:", {
   });
 }
 
-
 setInterval(() => {
   const now = Date.now();
 
   for (const [userId, timestamps] of messageTracker.entries()) {
     const filtered = timestamps.filter((t) => now - t < 10000);
-
     if (filtered.length === 0) {
       messageTracker.delete(userId);
     } else {
