@@ -10,12 +10,16 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
   const callSocket = useGlobalCall();
 
-  const callerIceQueueRef = useRef<any[]>([]);   
-  const receiverIceQueueRef = useRef<any[]>([]); 
+  const callerIceQueueRef = useRef<any[]>([]);
+  const receiverIceQueueRef = useRef<any[]>([]);
 
   const setRemoteAnswerRef = useRef<((answer: any) => Promise<void>) | undefined>(undefined);
   const addIceCandidateRef = useRef<((candidate: any) => Promise<void>) | undefined>(undefined);
   const cleanupRef = useRef<(() => void) | undefined>(undefined);
+
+  // Mute / camera / speaker state refs
+  const isMutedRef = useRef(false);
+  const isSpeakerMutedRef = useRef(false);
 
   // SOCKET LISTENERS
   useEffect(() => {
@@ -28,7 +32,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       addIceCandidateRef.current?.(candidate);
     };
 
-    //  call-ended now triggers cleanup so peer/tracks don't dangle
     const handleCallEnded = () => {
       console.log("📴 remote ended call — cleaning up");
       cleanupRef.current?.();
@@ -77,7 +80,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     peer.ontrack = (event) => {
       console.log("🎥 TRACK:", event.track.kind);
-
       remoteStreamRef.current!.addTrack(event.track);
 
       if (remoteVideoRef.current) {
@@ -86,7 +88,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStreamRef.current;
-        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.muted = isSpeakerMutedRef.current;
         remoteAudioRef.current.volume = 1;
         remoteAudioRef.current.play().catch(() => {});
       }
@@ -125,7 +127,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     });
   };
 
-  // START CALL (caller side)
+  // START CALL
   const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
     if (peerRef.current) {
       console.log("♻️ resetting old peer");
@@ -134,6 +136,8 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     callerIceQueueRef.current = [];
     receiverIceQueueRef.current = [];
+    isMutedRef.current = false;
+    isSpeakerMutedRef.current = false;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -159,25 +163,20 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       await peer.setLocalDescription(await peer.createOffer());
       await waitForIceGathering(peer);
 
-      const offer = peer.localDescription;
-
       callSocket.setCallType(type);
       callSocket.setCallStatus("calling");
       callSocket.setCallUser(user);
 
       console.log("📤 EMITTING CALL USER", { to });
-      console.log("📡 SOCKET CONNECTED?", socket.connected);
-
-      socket.emit("call-user", { to, offer, user, type });
+      socket.emit("call-user", { to, offer: peer.localDescription, user, type });
     } catch (err) {
       console.error("❌ getUserMedia error", err);
     }
   };
 
-  // ACCEPT CALL (receiver side)
+  // ACCEPT CALL
   const acceptCall = async (from: string, offer: any, type = "audio") => {
     if (peerRef.current) {
-      console.log("♻️ resetting old peer");
       peerRef.current.ontrack = null;
       peerRef.current.onicecandidate = null;
       peerRef.current.close();
@@ -186,6 +185,8 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     callerIceQueueRef.current = [];
     receiverIceQueueRef.current = [];
+    isMutedRef.current = false;
+    isSpeakerMutedRef.current = false;
 
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
@@ -210,7 +211,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
-    // Flush receiver's queue (caller's ICE that arrived before offer was set)
     for (const candidate of receiverIceQueueRef.current) {
       await peer.addIceCandidate(new RTCIceCandidate(candidate));
     }
@@ -220,17 +220,15 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     await waitForIceGathering(peer);
 
     socket.emit("answer-call", { to: from, answer: peer.localDescription });
-
     callSocket.setCallStatus("connected");
   };
 
-  // ANSWER RECEIVED (caller side)
+  // ANSWER RECEIVED
   const setRemoteAnswer = async (answer: any) => {
     if (!peerRef.current) return;
 
     await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
 
-    // Flush caller's queue (receiver's ICE that arrived before answer was set)
     for (const candidate of callerIceQueueRef.current) {
       await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
     }
@@ -238,10 +236,9 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     callSocket.setCallStatus("connected");
   };
-  // ✅ Assign to ref so the stale socket listener always calls the latest version
   setRemoteAnswerRef.current = setRemoteAnswer;
 
-  // ICE CANDIDATE
+  // ICE
   const addIceCandidate = async (candidate: any) => {
     if (!peerRef.current) return;
 
@@ -258,7 +255,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       console.log("ICE error", e);
     }
   };
-  // ✅ Assign to ref so the stale socket listener always calls the latest version
   addIceCandidateRef.current = addIceCandidate;
 
   // CLEANUP
@@ -283,7 +279,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     remoteStreamRef.current = null;
   };
-  // ✅ Assign to ref so the stale socket listener always calls the latest version
   cleanupRef.current = cleanup;
 
   // END CALL
@@ -304,19 +299,72 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     setActiveCallUserId(null);
   };
 
-  // MUTE
-  const isMutedRef = useRef(false);
-
+  // 🎤 TOGGLE MUTE
   const toggleMute = () => {
     if (!localStreamRef.current) return false;
-
     isMutedRef.current = !isMutedRef.current;
-
-    localStreamRef.current.getAudioTracks().forEach((track) => {
-      track.enabled = !isMutedRef.current;
+    localStreamRef.current.getAudioTracks().forEach((t) => {
+      t.enabled = !isMutedRef.current;
     });
-
     return isMutedRef.current;
+  };
+
+  // SWITCH CAMERA (front <-> rear)
+  const facingModeRef = useRef<"user" | "environment">("user");
+
+  const switchCamera = async (): Promise<boolean> => {
+    if (!localStreamRef.current || !peerRef.current) return false;
+
+    facingModeRef.current =
+      facingModeRef.current === "user" ? "environment" : "user";
+
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facingModeRef.current },
+        audio: false,
+      });
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+
+      // replaceTrack swaps the track on the peer without renegotiation
+      const sender = peerRef.current
+        .getSenders()
+        .find((s) => s.track?.kind === "video");
+
+      if (sender) {
+        await sender.replaceTrack(newVideoTrack);
+      }
+
+      // Stop old track and swap into localStream
+      const oldVideoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (oldVideoTrack) {
+        oldVideoTrack.stop();
+        localStreamRef.current.removeTrack(oldVideoTrack);
+      }
+      localStreamRef.current.addTrack(newVideoTrack);
+
+      // Update local preview
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
+
+      return true;
+    } catch (err) {
+      console.error("switchCamera error", err);
+      // Revert facing mode on failure
+      facingModeRef.current =
+        facingModeRef.current === "user" ? "environment" : "user";
+      return false;
+    }
+  };
+
+  // 🔊 TOGGLE SPEAKER
+  const toggleSpeaker = () => {
+    isSpeakerMutedRef.current = !isSpeakerMutedRef.current;
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.muted = isSpeakerMutedRef.current;
+    }
+    return isSpeakerMutedRef.current;
   };
 
   return {
@@ -326,5 +374,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     addIceCandidate,
     endCall,
     toggleMute,
+    switchCamera,
+    toggleSpeaker,
   };
 }
