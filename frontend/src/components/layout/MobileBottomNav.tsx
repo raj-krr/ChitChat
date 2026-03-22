@@ -7,6 +7,7 @@ import {
   User,
 } from "lucide-react";
 import { useNotifications } from "../../context/NotificationContext";
+import { useGlobalCall } from "../../context/CallContext";
 
 type NavKey = "home" | "search" | "notifications" | "profile";
 
@@ -37,6 +38,8 @@ export default function MobileBottomNav({
 }: Props) {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
+  const { callStatus } = useGlobalCall();
+  const isInCall = callStatus === "calling" || callStatus === "ringing" || callStatus === "connected";
 
   const handleNewChat = () => {
     if (onNewChat) onNewChat();
@@ -52,7 +55,7 @@ export default function MobileBottomNav({
         h-[68px]
         z-[100] sm:hidden
         transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-        ${visible
+        ${visible && !isInCall
           ? "translate-y-0 opacity-100 pointer-events-auto"
           : "translate-y-28 opacity-0 pointer-events-none"
         }
@@ -206,17 +209,6 @@ function NavButton({ item, isActive, onClick, badge }: NavButtonProps) {
         {item.label}
       </span>
 
-      {/* Active dot */}
-      {isActive && (
-        <span
-          className="
-            absolute bottom-1.5
-            w-1 h-1 rounded-full
-            bg-gradient-to-r from-violet-400 to-cyan-400
-            shadow-[0_0_6px_rgba(139,92,246,0.8)]
-          "
-        />
-      )}
     </button>
   );
 }
