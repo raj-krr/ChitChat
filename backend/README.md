@@ -1,39 +1,113 @@
 # 🚀 ChitChat Backend
 
-ChitChat Backend is a **production-ready real-time chat server** built with **Node.js, Express, TypeScript, MongoDB, and Socket.IO**.  
-It powers authentication, messaging, friendships, notifications, file uploads, and real-time events for the ChitChat application.
+ChitChat Backend is a **production-grade real-time communication server** built with
+**Node.js, Express, TypeScript, MongoDB, Socket.IO, and WebRTC signaling**.
+
+It powers **authentication, messaging, friendships, notifications, media handling, and real-time audio/video communication**, forming the backbone of the ChitChat platform.
+
+---
+
+## 🌐 Live API
+
+⚡ https://chitchatt.tech/api
+
+> Handles authentication, messaging, real-time events, and WebRTC signaling.
 
 ---
 
 ## 🧠 Architecture Overview
 
-- REST APIs for authentication, users, chats, friends, and notifications
-- Socket.IO for real-time messaging and presence
-- JWT-based authentication with refresh tokens
-- OTP-based email verification and password reset
-- Modular, scalable TypeScript architecture
+* REST APIs for authentication, users, chats, friends, and notifications
+* Socket.IO for real-time messaging, presence, and signaling
+* WebRTC signaling layer for audio/video calling
+* JWT-based authentication with access & refresh tokens
+* OTP-based email verification and password reset
+* Modular, scalable TypeScript architecture
+
+---
+
+## 🚀 Core Capabilities
+
+### 🔐 Authentication & Security
+
+* JWT-based authentication (access + refresh tokens)
+* OTP email verification system
+* Secure password reset flow
+* Protected routes via middleware
+* Cookie-based session handling
+
+### 💬 Messaging System
+
+* One-to-one real-time messaging
+* Message persistence with MongoDB
+* Delivery & read receipts
+* Message reactions
+* Message deletion (for me / everyone)
+* Pagination support
+
+### 📞 Real-Time Communication
+
+* Socket.IO-based event system
+* Online/offline presence tracking
+* Typing indicators
+* Notification events
+* 📹 WebRTC signaling for audio/video calls
+
+### 📁 Media Handling
+
+* File uploads via Multer
+* AWS S3 integration for storage
+* Profile image upload & management
+
+### 🤖 AI Integration
+
+* AI bot support via Gemini integration
+* Extensible AI service layer
 
 ---
 
 ## 🛠 Tech Stack
 
-- Node.js
-- Express
-- TypeScript
-- MongoDB + Mongoose
-- Socket.IO
-- JWT (Access & Refresh Tokens)
-- bcrypt
-- Multer
-- Nodemailer
-- AWS S3
-- Docker
+### Core Backend
+
+* Node.js
+* Express
+* TypeScript
+
+### Database & ORM
+
+* MongoDB
+* Mongoose
+
+### Realtime & Communication
+
+* Socket.IO
+* WebRTC (signaling layer)
+
+### Auth & Security
+
+* JWT (Access & Refresh Tokens)
+* bcrypt
+
+### File & Media
+
+* Multer
+* AWS S3
+
+### Services
+
+* Nodemailer (Email/OTP)
+* Gemini API (AI)
+
+### DevOps
+
+* Docker
 
 ---
 
 ## 📂 Folder Structure
 
-```txt
+```txt id="bk29xp"
 backend/
 ├── dist/
 ├── src/
@@ -68,8 +142,8 @@ backend/
 │ │ └── notificationRoute.ts
 │ │
 │ ├── utils/
-│ ├── socket.ts
-│ ├── socketEmitter.ts
+│ ├── socket.ts              # Socket.IO server
+│ ├── socketEmitter.ts      # Event emitter layer
 │ ├── app.ts
 │ └── index.ts
 │
@@ -79,25 +153,26 @@ backend/
 ├── tsconfig.json
 ├── package.json
 └── README.md
-``` 
+```
 
 ---
 
 ## 🔐 Authentication Flow
 
 1. User registers
-2. OTP sent to email
+2. OTP is sent via email
 3. Email verification
-4. Login
+4. User logs in
 5. JWT access & refresh tokens issued
-6. Protected routes secured via middleware
+6. Protected routes accessed with middleware
 
 ---
 
 ## 🌐 API Routes
 
 ### 🔑 Auth (`/api/auth`)
-```http
+
+```http id="a1x92s"
 POST /register
 POST /verifyEmail
 POST /login
@@ -110,7 +185,8 @@ POST /refresh
 ```
 
 ### 👤 Profile (`/api/me`)
-```http
+
+```http id="v93k2d"
 GET /getuser
 POST /updateprofile
 POST /uploadprofilephoto
@@ -118,7 +194,8 @@ POST /removeprofilephoto
 ```
 
 ### 💬 Chat (`/api/message`)
-```http
+
+```http id="p39x8s"
 GET /chats
 GET /chat/:id
 POST /send/:id
@@ -130,7 +207,8 @@ POST /:messageId/react
 ```
 
 ### 👥 Friends (`/api/friends`)
-```http
+
+```http id="m20x8z"
 GET /allusers
 GET /
 POST /request
@@ -143,8 +221,8 @@ DELETE /request/:id
 ```
 
 ### 🔔 Notifications (`/api/notifications`)
-```http
-### 🔔 Notifications (`/api/notifications`)
+
+```http id="n20zz1"
 GET /
 POST /read/:id
 POST /read-all
@@ -152,21 +230,30 @@ POST /read-all
 
 ---
 
-## 🔌 Real-Time (Socket.IO)
+## 🔌 Real-Time & Calling System
 
-- Real-time messaging
-- Online/offline presence
-- Message delivery & read receipts
-- Typing indicators
-- Notification events
+### Messaging Events
+
+* Real-time message delivery
+* Read & delivery receipts
+* Typing indicators
+* Presence tracking
+
+### 📞 Calling (WebRTC Signaling)
+
+1. Caller emits `call-user` event
+2. Backend forwards signaling data via Socket.IO
+3. Offer/Answer exchange handled through socket events
+4. ICE candidates relayed between peers
+5. Peer-to-peer connection established
+
+> ⚡ Backend acts as signaling server, not media server
 
 ---
 
 ## ⚙️ Environment Variables
 
-Create a `.env` file:
-
-```env
+```env id="env992"
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/chitchat
 
@@ -182,38 +269,63 @@ AWS_ACCESS_KEY_ID=your_key
 AWS_SECRET_ACCESS_KEY=your_secret
 AWS_BUCKET_NAME=your_bucket
 AWS_REGION=your_region
+
 NODE_ENV=development
 ```
+
+---
+
 ## ▶️ Running Locally
 
-```bash
+```bash id="run882"
 npm install
 npm run dev
 ```
+
 Server runs on: `http://localhost:5000`
 
 ---
-## 🐳 Docker
-Build and run with Docker:
 
-```bash
+## 🐳 Docker
+
+```bash id="dock992"
 docker build -t chitchat-backend .
 docker run -p 5000:5000 chitchat-backend
 ```
+
+---
+
 ## 🧪 Scripts
-```bash
-npm run dev          # Start development server with nodemon
-npm run build        # Build for production
-npm start            # Start production server
+
+```bash id="scr882"
+npm run dev          # Development (nodemon)
+npm run build        # Build TypeScript
+npm start            # Production server
 ```
+
+---
+
 ## 🛡 Security
-- Passwords hashed with bcrypt
-- JWT for secure authentication 
-- Input validation and sanitization
-- Cookie-based token handling
-- CORS configuration
-- Protected routes via middleware
-- Rate limiting (to be implemented)
+
+* Password hashing with bcrypt
+* JWT-based authentication
+* Secure cookie handling
+* Input validation & sanitization
+* CORS configuration
+* Route protection middleware
+* Rate limiting 
+
+---
+
+## 🧠 Engineering Highlights
+
+* Scalable modular architecture
+* Event-driven socket system
+* WebRTC signaling implementation
+* Separation of concerns (controllers, services, sockets)
+* Cloud storage integration (AWS S3)
+* AI-ready backend design
+
 ---
 
 ## 📄 License

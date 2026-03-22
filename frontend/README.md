@@ -1,35 +1,98 @@
 # 🎨 ChitChat Frontend
 
-ChitChat Frontend is a **modern, production-ready chat application UI** built with **React, TypeScript, Vite, and Tailwind CSS**.  
-It provides authentication, real-time messaging, notifications, profile management, and a clean, scalable UI architecture.
+ChitChat Frontend is a **production-grade real-time communication UI** built with
+**React, TypeScript, Vite, Tailwind CSS, Socket.IO, and WebRTC**.
+
+It delivers a complete messaging experience including **real-time chat, media sharing, voice messaging, and audio/video calling**, all wrapped in a scalable and clean architecture.
+
+---
+
+## 🌐 Live Demo
+
+🚀 https://chitchatt.tech
+
+* 🔐 Create an account or log in
+* 💬 Experience real-time messaging
+* 🎙️ Send voice messages
+* 📞 Try audio & video calling in real-time
 
 ---
 
 ## 🚀 Features
 
-- Authentication (Login, Register, Email Verification, Password Reset)
-- Real-time chat UI (Socket.IO powered)
-- Friend system & requests
-- Notifications panel
-- Profile management
-- Dark-themed modern UI
-- Responsive design (Desktop & Mobile)
-- Protected & public routing
-- Scalable, feature-based folder structure
+### 💬 Messaging & Communication
+
+* Real-time chat (Socket.IO powered)
+* Optimistic UI updates
+* Message pagination & scroll preservation
+* Reply-to message support
+* Delivery & read receipts
+* File attachments with previews
+* 🎙️ Voice messaging support
+* Typing indicators 
+
+### 📞 Calling System
+
+* 🎙️ Voice messaging
+* 📹 Real-time audio & video calling (WebRTC)
+* Socket-based signaling system
+* Peer-to-peer media streaming
+
+### 👥 Social Features
+
+* Friend system & requests
+* User presence (online/offline)
+* Notifications panel (real-time synced)
+
+### 🔐 Authentication
+
+* Login & Registration
+* Email verification
+* Password reset flow
+* Protected routes
+
+### 🎨 UI/UX
+
+* Modern dark-themed UI
+* Glassmorphic design system
+* Fully responsive (desktop + mobile)
+* Smooth transitions & interactions
+
+---
+
+## 🧠 Architecture Highlights
+
+* Feature-based scalable folder structure
+* Context-driven global state management
+* Custom hooks for business logic separation
+* Socket layer for real-time sync
+* WebRTC layer for peer-to-peer communication
+* Clean separation between UI and logic
 
 ---
 
 ## 🛠 Tech Stack
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Axios
-- Socket.IO Client
-- React Router
-- Context API
-- Docker & Nginx
+### Frontend Core
+
+* React (Vite)
+* TypeScript
+* Tailwind CSS
+
+### State & Networking
+
+* Context API
+* Axios
+* Socket.IO Client
+
+### Realtime & Media
+
+* WebRTC APIs (RTCPeerConnection, MediaStream)
+
+### DevOps
+
+* Docker
+* Nginx
 
 ---
 
@@ -49,59 +112,36 @@ frontend/
 │ │ └── socket.ts
 │ │
 │ ├── components/
+│ │ ├── call/                 
+│ │ │ ├── hooks/
+│ │ │ │ └── useCall.ts
+│ │ │ └── CallWindow.tsx
+│ │ │
 │ │ ├── chat/
 │ │ │ ├── hooks/
 │ │ │ ├── ChatHeader.tsx
 │ │ │ ├── ChatWindow.tsx
 │ │ │ ├── MessageBubble.tsx
 │ │ │ ├── MessageInput.tsx
+│ │ │ ├── FilePreview.tsx
 │ │ │ └── index.ts
 │ │ │
 │ │ ├── dashboard/
-│ │ │ ├── ChatListItem.tsx
-│ │ │ ├── EmptyState.tsx
-│ │ │ ├── FriendRequests.tsx
-│ │ │ ├── FriendsBubble.tsx
-│ │ │ ├── FriendsPicker.tsx
-│ │ │ ├── FriendsPickerPanel.tsx
-│ │ │ ├── FriendsPickerSheet.tsx
-│ │ │ ├── SearchResultItem.tsx
-│ │ │ ├── SearchResults.tsx
-│ │ │ ├── Sidebar.tsx
-│ │ │ └── useSidebar.ts
-│ │ │
 │ │ ├── layout/
-│ │ │ ├── AppLayout.tsx
-│ │ │ ├── AppNavbar.tsx
-│ │ │ └── MobileBottomNav.tsx
-│ │ │
 │ │ ├── notifications/
-│ │ │ ├── NotificationItem.tsx
-│ │ │ └── NotificationsPanel.tsx
-│ │ │
 │ │ ├── profile/
-│ │ │ ├── ProfilePeek.tsx
-│ │ │ └── useProfilePeek.ts
-│ │ │
 │ │ └── TopLoader.tsx
 │ │
 │ ├── context/
 │ │ ├── AuthContext.tsx
+│ │ ├── CallContext.tsx
 │ │ ├── NotificationContext.tsx
 │ │ └── PresenceContext.tsx
 │ │
 │ ├── pages/
 │ │ ├── auth/
-│ │ │ ├── LoginPage.tsx
-│ │ │ ├── Register.tsx
-│ │ │ ├── ForgotPassword.tsx
-│ │ │ ├── ResetPassword.tsx
-│ │ │ └── VerifyEmail.tsx
-│ │ │
 │ │ ├── profile/
 │ │ ├── DashboardPage.tsx
-│ │ ├── HomePage.tsx
-│ │ ├── LogoutLogic.tsx
 │ │ ├── NotificationsPage.tsx
 │ │ └── SettingsPage.tsx
 │ │
@@ -112,20 +152,14 @@ frontend/
 │ ├── utils/
 │ ├── App.tsx
 │ ├── main.tsx
-│ ├── App.css
-│ └── index.css
+│ └── styles/
 │
 ├── .env
 ├── Dockerfile
 ├── docker-compose.yml
 ├── nginx.conf
-├── index.html
-├── tailwind.config.js
-├── postcss.config.js
 ├── vite.config.ts
-├── tsconfig.json
-├── package.json
-└── README.md
+└── package.json
 ```
 
 ---
@@ -138,22 +172,29 @@ Create a `.env` file in the root:
 VITE_API_BASE_URL=http://localhost:5000/api
 VITE_SOCKET_URL=http://localhost:5000
 ```
+
+---
+
 ## 📥 Installation & Running Locally
 
 ```bash
 npm install
 npm run dev
 ```
-App runs on: `http://localhost:5173`  
+
+App runs on: `http://localhost:5173`
 
 ---
+
 ## 🐳 Docker
-Build and run with Docker:  
 
 ```bash
 docker build -t chitchat-frontend .
 docker run -p 5173:80 chitchat-frontend
 ```
+
+---
+
 ## 🧪 Scripts
 
 ```bash
@@ -163,30 +204,43 @@ npm run preview     # Preview production build
 ```
 
 ---
+
 ## 🔐 Routing Strategy
 
-- **PublicRoute** → Authentication pages
-- **ProtectedRoute** → Authenticated application pages
-- Context-based authentication guard for route protection
+* **PublicRoute** → Authentication pages
+* **ProtectedRoute** → Authenticated application
+* Context-based authentication guard
 
 ---
 
-## 📡 Real-Time Communication
+## 📡 Real-Time & Calling Flow
 
-- Socket.IO client integration
-- User presence tracking (online/offline)
-- Real-time message updates
-- Notification synchronization
+### Messaging
+
+1. User sends a message
+2. UI updates optimistically
+3. Socket event emitted
+4. Backend persists message
+5. Receiver gets instant update
+
+### Calling (WebRTC)
+
+1. User initiates call
+2. Socket sends signaling event
+3. Peer connection is created
+4. Offer/Answer exchange
+5. ICE candidates shared
+6. Direct media stream established
 
 ---
 
 ## 🎯 Design Principles
 
-- Feature-based folder structure
-- Clear separation of concerns
-- Reusable UI components
-- Mobile-first responsive design
-- Clean, maintainable codebase
+* Feature-based architecture
+* Clean separation of concerns
+* Reusable components
+* Scalable real-time system design
+* Maintainable and modular codebase
 
 ---
 
