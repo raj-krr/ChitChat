@@ -51,12 +51,6 @@ export function initSocket(io: Server) {
 
       const toSocketId = onlineUsers.get(to);
 
-      console.log("📞 CALL USER:", {
-        from: userId,
-        to,
-        onlineUsers: Array.from(onlineUsers.entries()),
-      });
-
       if (!toSocketId) {
         socket.emit("error", "User is offline");
         return;
@@ -68,12 +62,10 @@ export function initSocket(io: Server) {
       }
 
       if (ongoingCalls.has(to)) {
-        socket.emit("call-busy");
+        socket.emit("call-busy", { to });
         return;
       }
 
-      // ✅ Register BOTH sides immediately so ICE candidates
-      // from the receiver aren't dropped before answer-call arrives
       ongoingCalls.set(userId, to);
       ongoingCalls.set(to, userId);
 
@@ -88,54 +80,52 @@ export function initSocket(io: Server) {
     socket.on("answer-call", ({ to, answer }) => {
       if (!to || !answer) return;
 
-      // Ensure both sides are marked (in case of race condition)
       if (!ongoingCalls.has(userId)) ongoingCalls.set(userId, to);
       if (!ongoingCalls.has(to)) ongoingCalls.set(to, userId);
 
       const toSocketId = onlineUsers.get(to);
       if (toSocketId) {
-        io.to(toSocketId).emit("call-answered", {
-          from: userId,
-          answer,
-        });
+        io.to(toSocketId).emit("call-answered", { from: userId, answer });
       }
     });
 
     socket.on("reject-call", ({ to }) => {
       const toSocketId = onlineUsers.get(to);
-
       if (toSocketId) {
         io.to(toSocketId).emit("call-rejected", { from: userId });
       }
-
       ongoingCalls.delete(userId);
       ongoingCalls.delete(to);
     });
 
     socket.on("end-call", ({ to }) => {
       const toSocketId = onlineUsers.get(to);
-
       if (toSocketId) {
         io.to(toSocketId).emit("call-ended", { from: userId });
+      }
+      ongoingCalls.delete(userId);
+      ongoingCalls.delete(to);
+    });
+
+    socket.on("call-missed", ({ to }) => {
+      if (!to) return;
+
+      const toSocketId = onlineUsers.get(to);
+      if (toSocketId) {
+        io.to(toSocketId).emit("call-missed", { from: userId });
       }
 
       ongoingCalls.delete(userId);
       ongoingCalls.delete(to);
+
     });
 
     socket.on("ice-candidate", ({ to, candidate }) => {
       if (!to || !candidate) return;
 
-      // ✅ REMOVED the ongoingCalls guard — it was silently dropping
-      // the receiver's ICE candidates which arrived before answer-call
-      // was processed. Both sides are now registered in call-user anyway.
-
       const toSocketId = onlineUsers.get(to);
       if (toSocketId) {
-        io.to(toSocketId).emit("ice-candidate", {
-          from: userId,
-          candidate,
-        });
+        io.to(toSocketId).emit("ice-candidate", { from: userId, candidate });
       }
     });
 
@@ -155,9 +145,7 @@ export function initSocket(io: Server) {
       }
       userLastMessage.set(userId, now);
 
-      if (!messageTracker.has(userId)) {
-        messageTracker.set(userId, []);
-      }
+      if (!messageTracker.has(userId)) messageTracker.set(userId, []);
 
       const timestamps = messageTracker.get(userId)!;
       timestamps.push(now);
@@ -178,10 +166,7 @@ export function initSocket(io: Server) {
 
       const toSocketId = onlineUsers.get(data.to);
       if (toSocketId) {
-        io.to(toSocketId).emit("receive_message", {
-          from: userId,
-          message: data.message,
-        });
+        io.to(toSocketId).emit("receive_message", { from: userId, message: data.message });
       }
     };
 
@@ -203,10 +188,7 @@ export function initSocket(io: Server) {
         ongoingCalls.delete(partner);
       }
 
-      socket.broadcast.emit("user-offline", {
-        userId,
-        lastSeen: new Date(),
-      });
+      socket.broadcast.emit("user-offline", { userId, lastSeen: new Date() });
     });
   });
 }
@@ -216,16 +198,11 @@ setInterval(() => {
 
   for (const [userId, timestamps] of messageTracker.entries()) {
     const filtered = timestamps.filter((t) => now - t < 10000);
-    if (filtered.length === 0) {
-      messageTracker.delete(userId);
-    } else {
-      messageTracker.set(userId, filtered);
-    }
+    if (filtered.length === 0) messageTracker.delete(userId);
+    else messageTracker.set(userId, filtered);
   }
 
   for (const [userId, muteEnd] of mutedUsers.entries()) {
-    if (muteEnd < now) {
-      mutedUsers.delete(userId);
-    }
+    if (muteEnd < now) mutedUsers.delete(userId);
   }
 }, 30000);
