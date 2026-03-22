@@ -9,13 +9,15 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { PresenceProvider } from "./context/PresenceContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { CallProvider } from "./context/CallContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <PresenceProvider>
-        <NotificationProvider>
+          <NotificationProvider>
+          <CallProvider>
         <MantineProvider
           theme={{
             fontFamily: "Inter, sans-serif",
@@ -23,7 +25,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           }}
         >
           <App />
-            </MantineProvider>
+              </MantineProvider>
+              </CallProvider>
             </NotificationProvider>
           </PresenceProvider>
       </AuthProvider>

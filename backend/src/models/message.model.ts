@@ -11,7 +11,8 @@ export interface IMessage extends Document {
   senderId: Types.ObjectId;
   receiverId: Types.ObjectId;
   text?: string;
-    file?: string;
+  file?: string;
+  mimeType: string;
   isRead?: boolean;
   isDeleted?: boolean;
   deletedFor: string[];
@@ -40,7 +41,8 @@ const messageSchema = new mongoose.Schema<IMessage>({
         required: true,
     },
     text: { type: String },
-    file: { type: String },
+  file: { type: String },
+    mimeType: {type: String},
    isRead: {
   type: Boolean,
   default: false,

@@ -2,10 +2,12 @@ import ChatHeader from "./ChatHeader";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState} from "react";
 
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useChatSocket } from "./hooks/useChatSocket";
+
+import { useGlobalCall } from "../../context/CallContext";
 
 const safeDate = (date?: string) => {
   if (!date) return null;
@@ -28,6 +30,8 @@ export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
   const [replyTo, setReplyTo] = useState<any>(null);
 
+const callSocket = useGlobalCall();
+  
   const {
     messages,
     setMessages,
@@ -69,6 +73,7 @@ export default function ChatWindow({ chat, onBack }: any) {
       markRead();
     }
   }, [chat._id]);
+
 
 const scrollToMessage = async (messageId: string) => {
   const id = String(messageId);
@@ -141,7 +146,18 @@ const scrollToMessage = async (messageId: string) => {
 
   return (
     <div className="flex w-full flex-col h-full min-h-0 relative">
-      <ChatHeader user={chat} onBack={onBack} />
+    <ChatHeader
+  user={{
+    ...chat,
+   onCall: (type:any) => {
+  callSocket.setCallUser(chat);
+  callSocket.setCallType(type);
+  callSocket.setCallStatus("calling");
+}
+     
+  }}
+  onBack={onBack}
+/>
 
       <div
         ref={containerRef}
