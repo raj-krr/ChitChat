@@ -7,7 +7,8 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const email: string = searchParams.get("email") ?? "";
+  // 🔥 IMPORTANT: trim email from URL
+  const email: string = (searchParams.get("email") ?? "").trim();
 
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -59,6 +60,7 @@ export default function VerifyEmail() {
     setOtpError("");
 
     const otpString = otpDigits.join("");
+
     if (otpString.length !== 6) {
       setOtpError("OTP must be 6 digits");
       return;
@@ -66,6 +68,7 @@ export default function VerifyEmail() {
 
     try {
       setLoading(true);
+
       await verifyEmailApi({
         email,
         verificationCode: otpString,
@@ -81,10 +84,15 @@ export default function VerifyEmail() {
 
   /* ---------------- RESEND ---------------- */
   const handleResend = async () => {
+    if (timer > 0) return; // 🔥 prevent spam
+
     setOtpError("");
+
     try {
       setResendLoading(true);
+
       await resendVerificationOtpApi({ email });
+
       setTimer(30);
     } catch (err: any) {
       setOtpError(err?.response?.data?.msg || "Failed to resend OTP");
@@ -115,7 +123,6 @@ export default function VerifyEmail() {
           flex flex-col items-center gap-6
         "
       >
-        {/* Title */}
         <div className="text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white">
             Verify Email
@@ -127,7 +134,7 @@ export default function VerifyEmail() {
           </Text>
         </div>
 
-        {/* OTP Section */}
+        {/* OTP */}
         <div
           className="w-full flex flex-col items-center gap-5 mt-4"
           onPaste={handlePasteOtp}
@@ -178,6 +185,7 @@ export default function VerifyEmail() {
           radius="lg"
           fullWidth
           loading={loading}
+          disabled={loading}
           onClick={handleVerify}
           className="
             bg-indigo-600 hover:bg-indigo-500
@@ -208,7 +216,7 @@ export default function VerifyEmail() {
           </button>
         )}
 
-        {/* Back to Login */}
+        {/* Back */}
         <Text className="text-center text-sm text-white/60">
           Back to{" "}
           <button

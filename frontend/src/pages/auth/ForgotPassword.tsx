@@ -14,25 +14,27 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
 
   const validateIdentifier = () => {
+    const trimmedIdentifier = identifier.trim();
+
     setError("");
 
-    if (!identifier.trim()) {
+    if (!trimmedIdentifier) {
       setError("Email or username is required");
       return false;
     }
 
-    if (identifier.length > 50) {
+    if (trimmedIdentifier.length > 50) {
       setError("Maximum length is 50 characters");
       return false;
     }
 
-    if (identifier.includes("@")) {
-      if (!emailRegex.test(identifier)) {
+    if (trimmedIdentifier.includes("@")) {
+      if (!emailRegex.test(trimmedIdentifier)) {
         setError("Invalid email format");
         return false;
       }
     } else {
-      if (!usernameRegex.test(identifier)) {
+      if (!usernameRegex.test(trimmedIdentifier)) {
         setError("Invalid username format");
         return false;
       }
@@ -44,12 +46,16 @@ export default function ForgotPassword() {
   const handleForgot = async () => {
     if (!validateIdentifier()) return;
 
+    const trimmedIdentifier = identifier.trim();
+
     try {
       setLoading(true);
-      await forgotPasswordApi({ identifier });
+
+      await forgotPasswordApi({ identifier: trimmedIdentifier });
 
       navigate(
-        "/reset-password?identifier=" + encodeURIComponent(identifier)
+        "/reset-password?identifier=" +
+          encodeURIComponent(trimmedIdentifier)
       );
     } catch (err: any) {
       setError(err?.response?.data?.msg || "Error sending OTP");
@@ -96,7 +102,14 @@ export default function ForgotPassword() {
           radius="md"
           size="md"
           value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
+          onChange={(e) => {
+            let val = e.target.value;
+
+            // remove leading spaces + collapse multiple spaces
+            val = val.replace(/^\s+/, "").replace(/\s+/g, " ");
+
+            if (val.length <= 50) setIdentifier(val);
+          }}
           error={error}
           classNames={{
             input:

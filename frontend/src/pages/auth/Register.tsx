@@ -23,45 +23,49 @@ export default function RegisterPage() {
   const validateInputs = () => {
     let ok = true;
 
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
     setUsernameError("");
     setEmailError("");
     setPasswordError("");
 
-    if (!username.trim()) {
+    if (!trimmedUsername) {
       setUsernameError("Username is required");
       ok = false;
-    } else if (username.length < 3) {
+    } else if (trimmedUsername.length < 3) {
       setUsernameError("Username must be at least 3 characters");
       ok = false;
-    } else if (username.length > 30) {
+    } else if (trimmedUsername.length > 30) {
       setUsernameError("Maximum length is 30 characters");
       ok = false;
-    } else if (!usernameRegex.test(username)) {
+    } else if (!usernameRegex.test(trimmedUsername)) {
       setUsernameError("Username can contain letters, numbers, . _ - only");
       ok = false;
     }
 
-    if (!email.trim()) {
+    if (!trimmedEmail) {
       setEmailError("Email is required");
       ok = false;
-    } else if (email.length > 100) {
+    } else if (trimmedEmail.length > 100) {
       setEmailError("Maximum email length is 100 characters");
       ok = false;
-    } else if (!emailRegex.test(email)) {
+    } else if (!emailRegex.test(trimmedEmail)) {
       setEmailError("Invalid email format");
       ok = false;
     }
 
-    if (!password.trim()) {
+    if (!trimmedPassword) {
       setPasswordError("Password is required");
       ok = false;
-    } else if (password.length < 6) {
+    } else if (trimmedPassword.length < 6) {
       setPasswordError("Password must be at least 6 characters");
       ok = false;
-    } else if (password.length > 20) {
+    } else if (trimmedPassword.length > 20) {
       setPasswordError("Password must be 20 characters max");
       ok = false;
-    } else if (!passwordRegex.test(password)) {
+    } else if (!passwordRegex.test(trimmedPassword)) {
       setPasswordError("Password contains invalid characters");
       ok = false;
     }
@@ -72,15 +76,20 @@ export default function RegisterPage() {
   const handleRegister = async () => {
     if (!validateInputs()) return;
 
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
     try {
       setLoading(true);
+
       await registerApi({
-        username: username.trim(),
-        email: email.trim(),
-        password,
+        username: trimmedUsername,
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
 
-      navigate(`/verify-email?email=${email.trim()}`);
+      navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`);
     } catch (err: any) {
       const msg = err?.response?.data?.msg || "";
 
@@ -118,7 +127,6 @@ export default function RegisterPage() {
           flex flex-col gap-6
         "
       >
-        {/* Title */}
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white text-center">
           Create Account
         </h1>
@@ -126,7 +134,6 @@ export default function RegisterPage() {
           Join ChitChat and start clean conversations
         </p>
 
-        {/* Inputs */}
         <div className="space-y-4">
           <TextInput
             label="Username"
@@ -135,7 +142,11 @@ export default function RegisterPage() {
             size="md"
             value={username}
             onChange={(e) => {
-              const v = e.target.value;
+              let v = e.target.value;
+
+              // no leading spaces + remove ALL spaces for username
+              v = v.replace(/\s/g, "");
+
               if (v.length <= 30) setUsername(v);
             }}
             error={usernameError}
@@ -153,7 +164,11 @@ export default function RegisterPage() {
             size="md"
             value={email}
             onChange={(e) => {
-              const v = e.target.value;
+              let v = e.target.value;
+
+              // remove leading spaces + collapse multiple spaces
+              v = v.replace(/^\s+/, "").replace(/\s+/g, " ");
+
               if (v.length <= 100) setEmail(v);
             }}
             error={emailError}
@@ -183,7 +198,6 @@ export default function RegisterPage() {
           />
         </div>
 
-        {/* Submit */}
         <Button
           size="lg"
           radius="lg"
@@ -202,7 +216,6 @@ export default function RegisterPage() {
           Create Account
         </Button>
 
-        {/* Bottom link */}
         <Text className="text-center text-sm text-white/60">
           Already have an account?{" "}
           <button

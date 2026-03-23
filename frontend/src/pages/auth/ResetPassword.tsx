@@ -7,7 +7,8 @@ export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const identifier = searchParams.get("identifier") ?? "";
+  // 🔥 IMPORTANT: trim identifier from URL
+  const identifier = (searchParams.get("identifier") ?? "").trim();
 
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -60,6 +61,9 @@ export default function ResetPassword() {
   /* ---------------- VALIDATION ---------------- */
   const validateInputs = () => {
     let ok = true;
+
+    const trimmedPassword = newPassword.trim();
+
     setOtpError("");
     setPasswordError("");
 
@@ -68,10 +72,10 @@ export default function ResetPassword() {
       ok = false;
     }
 
-    if (!newPassword.trim()) {
+    if (!trimmedPassword) {
       setPasswordError("Password is required");
       ok = false;
-    } else if (newPassword.length < 6) {
+    } else if (trimmedPassword.length < 6) {
       setPasswordError("Password must be at least 6 characters");
       ok = false;
     }
@@ -83,12 +87,15 @@ export default function ResetPassword() {
   const handleReset = async () => {
     if (!validateInputs()) return;
 
+    const trimmedPassword = newPassword.trim();
+
     try {
       setLoading(true);
+
       await resetPasswordApi({
         identifier,
         resetPasswordOtp: otpDigits.join(""),
-        newPassword,
+        newPassword: trimmedPassword,
       });
 
       navigate("/login");
@@ -101,10 +108,15 @@ export default function ResetPassword() {
 
   /* ---------------- RESEND ---------------- */
   const handleResend = async () => {
+    if (timer > 0) return; // 🔥 prevent spam
+
     setOtpError("");
+
     try {
       setResendLoading(true);
+
       await forgotPasswordApi({ identifier });
+
       setTimer(30);
     } catch {
       setOtpError("Failed to resend OTP");
@@ -135,7 +147,6 @@ export default function ResetPassword() {
           flex flex-col gap-6
         "
       >
-        {/* Title */}
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white text-center">
           Reset Password
         </h1>
@@ -198,7 +209,7 @@ export default function ResetPassword() {
           </Text>
         </div>
 
-        {/* New Password */}
+        {/* Password */}
         <PasswordInput
           label="New Password"
           placeholder="Enter new password"
@@ -220,6 +231,7 @@ export default function ResetPassword() {
           radius="lg"
           fullWidth
           loading={loading}
+          disabled={loading}
           onClick={handleReset}
           className="
             bg-indigo-600 hover:bg-indigo-500

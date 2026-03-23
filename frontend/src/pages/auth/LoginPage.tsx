@@ -24,37 +24,42 @@ export default function LoginPage() {
   const [identifierError, setIdentifierError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   const validateInputs = () => {
     let isValid = true;
+
+    const trimmedIdentifier = identifier.trim();
+    const trimmedPassword = password.trim();
 
     setIdentifierError("");
     setPasswordError("");
 
-    if (!identifier.trim()) {
+    if (!trimmedIdentifier) {
       setIdentifierError("Identifier is required");
       isValid = false;
-    } else if (identifier.length > 50) {
+    } else if (trimmedIdentifier.length > 50) {
       setIdentifierError("Maximum length is 50 characters");
       isValid = false;
-    } else if (identifier.includes("@")) {
-      if (!emailRegex.test(identifier)) {
+    } else if (trimmedIdentifier.includes("@")) {
+      if (!emailRegex.test(trimmedIdentifier)) {
         setIdentifierError("Invalid email format");
         isValid = false;
       }
     } else {
-      if (!usernameRegex.test(identifier)) {
+      if (!usernameRegex.test(trimmedIdentifier)) {
         setIdentifierError("Username cannot contain spaces or emojis");
         isValid = false;
       }
     }
 
-    if (!password.trim()) {
+    if (!trimmedPassword) {
       setPasswordError("Password is required");
       isValid = false;
-    } else if (password.length > 20) {
+    } else if (trimmedPassword.length > 20) {
       setPasswordError("Password must be 20 characters max");
       isValid = false;
-    } else if (!passwordRegex.test(password)) {
+    } else if (!passwordRegex.test(trimmedPassword)) {
       setPasswordError("Password contains invalid characters");
       isValid = false;
     }
@@ -65,8 +70,17 @@ export default function LoginPage() {
   const handleLogin = async () => {
     if (!validateInputs()) return;
 
+    const trimmedIdentifier = identifier.trim();
+    const trimmedPassword = password.trim();
+
     try {
-      await loginApi({ identifier, password });
+      setLoading(true);
+
+      await loginApi({
+        identifier: trimmedIdentifier,
+        password: trimmedPassword,
+      });
+
       await refreshAuth();
     } catch (err: any) {
       const msg = err.response?.data?.msg;
@@ -78,6 +92,8 @@ export default function LoginPage() {
       } else if (msg?.includes("email not verified")) {
         setPasswordError("Email not verified yet");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,7 +135,11 @@ export default function LoginPage() {
             size="md"
             value={identifier}
             onChange={(e) => {
-              const val = e.target.value;
+              let val = e.target.value;
+
+              // prevent leading spaces + collapse multiple spaces
+              val = val.replace(/^\s+/, "").replace(/\s+/g, " ");
+
               if (val.length <= 50) setIdentifier(val);
             }}
             error={identifierError}
@@ -154,6 +174,8 @@ export default function LoginPage() {
           <Button
             size="lg"
             radius="lg"
+            loading={loading}
+            disabled={loading}
             className="
               bg-indigo-600 hover:bg-indigo-500
               text-white
