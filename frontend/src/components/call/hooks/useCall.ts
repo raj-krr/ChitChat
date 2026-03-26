@@ -91,6 +91,10 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       }
     };
 
+    peer.onconnectionstatechange = () => {
+      console.log("🔗 connection:", peer.connectionState);
+    };
+
     return peer;
   };
 
@@ -277,6 +281,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   // END CALL
   const endCall = () => {
     if (!peerRef.current) return;
+
 
     if (activeCallUserId) {
       socket.emit("end-call", { to: activeCallUserId });
