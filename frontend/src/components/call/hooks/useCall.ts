@@ -24,7 +24,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   // SOCKET LISTENERS
   useEffect(() => {
     const handleAnswer = ({ answer }: any) => {
-      console.log("📩 answer received");
       setRemoteAnswerRef.current?.(answer);
     };
 
@@ -33,7 +32,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
 
     const handleCallEnded = () => {
-      console.log("📴 remote ended call — cleaning up");
       cleanupRef.current?.();
       callSocket.setCallStatus("idle");
       callSocket.setIncomingCall(null);
@@ -79,7 +77,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
 
     peer.ontrack = (event) => {
-      console.log("🎥 TRACK:", event.track.kind);
       remoteStreamRef.current!.addTrack(event.track);
 
       if (remoteVideoRef.current) {
@@ -110,7 +107,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       }
 
       const timeout = setTimeout(() => {
-        console.log("⏱ ICE timeout fallback");
         peer.removeEventListener("icegatheringstatechange", checkState);
         resolve();
       }, 2000);
@@ -130,7 +126,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   // START CALL
   const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
     if (peerRef.current) {
-      console.log("♻️ resetting old peer");
       cleanup();
     }
 
@@ -162,7 +157,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       for (const track of stream.getTracks()) {
         peer.addTrack(track, stream);
       }
-      console.log("🎯 SENDERS:", peer.getSenders());
 
       await peer.setLocalDescription(await peer.createOffer());
       await waitForIceGathering(peer);
@@ -171,7 +165,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       callSocket.setCallStatus("calling");
       callSocket.setCallUser(user);
 
-      console.log("📤 EMITTING CALL USER", { to });
       socket.emit("call-user", { to, offer: peer.localDescription, user, type });
     } catch (err) {
       console.error("❌ getUserMedia error", err);
@@ -201,7 +194,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       video: type === "video",
     });
 
-    console.log("🎤 LOCAL TRACKS:", stream.getTracks());
     localStreamRef.current = stream;
     setActiveCallUserId(from);
 
@@ -213,7 +205,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     peerRef.current = peer;
 
     for (const track of stream.getTracks()) {
-      console.log("🎯 adding track:", track.kind);
       peer.addTrack(track, stream);
     }
 
@@ -251,7 +242,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     if (!peerRef.current) return;
 
     if (!peerRef.current.remoteDescription) {
-      console.log("⏳ ICE queued");
       callerIceQueueRef.current.push(candidate);
       receiverIceQueueRef.current.push(candidate);
       return;
@@ -267,7 +257,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
   // CLEANUP
   const cleanup = () => {
-    console.log("🧹 CLEANUP");
 
     if (peerRef.current) {
       peerRef.current.ontrack = null;
@@ -293,7 +282,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   const endCall = () => {
     if (!peerRef.current) return;
 
-    console.log("📴 END CALL");
 
     if (activeCallUserId) {
       socket.emit("end-call", { to: activeCallUserId });
