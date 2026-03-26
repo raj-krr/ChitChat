@@ -358,12 +358,11 @@ function ActiveCallWindow({
       className={`cw-window cw-anim-scale-in${isVideo ? " is-video" : ""}`}
       style={{ position: "fixed" }}
     >
-      {/* Desktop title bar */}
-      <TitleBar remoteName={remoteName} isConnected={isConnected} isVideo={isVideo} />
-
-      {/* Remote video — fills window on both mobile and desktop */}
+      {/* ── Remote video — always mounted, fills window for video calls ── */}
       <video
-        ref={remoteVideoRef} autoPlay playsInline
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
         style={isVideo ? {
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
@@ -371,9 +370,12 @@ function ActiveCallWindow({
         } : { display: "none" }}
       />
 
-      {/* Local PiP */}
+      {/* ── Local PiP video — always mounted, shown for video calls ── */}
       <video
-        ref={localVideoRef} autoPlay muted playsInline
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
         style={isVideo ? {
           position: "absolute",
           bottom: "calc(env(safe-area-inset-bottom,0px) + 100px)",
@@ -388,6 +390,9 @@ function ActiveCallWindow({
         } : { display: "none" }}
       />
 
+      {/* Desktop title bar */}
+      <TitleBar remoteName={remoteName} isConnected={isConnected} isVideo={isVideo} />
+
       {/* Main content area */}
       <div style={{
         flex: 1,
@@ -399,6 +404,8 @@ function ActiveCallWindow({
         zIndex: 1,
         overflow: "hidden",
         paddingTop: isVideo ? 0 : "clamp(16px,3vh,32px)",
+        // Allow pointer events to pass through to video for video calls
+        pointerEvents: isVideo ? "none" : "auto",
       }}>
         {/* Background orbs — audio call only */}
         {!isVideo && (
@@ -481,7 +488,7 @@ function ActiveCallWindow({
           </div>
         )}
 
-        {/* Video call: name overlay at top */}
+        {/* Video call: name overlay at top — re-enable pointer events just for this */}
         {isVideo && (
           <div style={{
             position: "absolute", top: 0, left: 0, right: 0,
@@ -489,6 +496,7 @@ function ActiveCallWindow({
             background: "linear-gradient(180deg,rgba(0,0,0,.65) 0%,transparent 100%)",
             display: "flex", alignItems: "center", gap: 12,
             zIndex: 3,
+            pointerEvents: "auto",
           }}>
             <img src={remoteAvatar} style={{
               width: 36, height: 36, borderRadius: "50%",
@@ -504,7 +512,7 @@ function ActiveCallWindow({
         )}
       </div>
 
-      {/* Controls bar */}
+      {/* Controls bar — always on top, always interactive */}
       <ControlBar
         isVideo={isVideo}
         isMuted={isMuted}
@@ -521,7 +529,7 @@ function ActiveCallWindow({
 /* ── Desktop title bar ── */
 function TitleBar({ isConnected, isVideo }: any) {
   return (
-    <div className="cw-titlebar">
+    <div className="cw-titlebar" style={{ position: "relative", zIndex: 3 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{
           width: 8, height: 8, borderRadius: "50%",
@@ -685,7 +693,7 @@ function StatusPill({ color, children }: any) {
   );
 }
 
-/* ── Icons (unchanged) ── */
+/* ── Icons ── */
 function PhoneAcceptIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="white" style={{ width: 26, height: 26 }}>
