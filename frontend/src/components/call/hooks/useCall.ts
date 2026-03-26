@@ -17,46 +17,11 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   const addIceCandidateRef = useRef<((candidate: any) => Promise<void>) | undefined>(undefined);
   const cleanupRef = useRef<(() => void) | undefined>(undefined);
 
+  // Mute / camera / speaker state refs
   const isMutedRef = useRef(false);
   const isSpeakerMutedRef = useRef(false);
 
-  // ─────────────────────────────────────────────────────────────
-  // AUDIO CONSTRAINTS
-  // These are the most aggressive echo/noise settings browsers support.
-  // echoCancellation removes your own voice feeding back through speaker.
-  // noiseSuppression filters background hiss, fan noise, keyboard clicks.
-  // autoGainControl keeps volume stable so the echo canceller can track it.
-  // suppressLocalAudioPlayback (Chrome 94+) tells the browser to never
-  //   route the local mic back to local speakers — this alone kills most echo.
-  // ─────────────────────────────────────────────────────────────
-  const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
-    // @ts-ignore — non-standard but supported in Chrome/Edge
-    suppressLocalAudioPlayback: true,
-    // Prefer the device's hardware AEC over the software fallback
-    // @ts-ignore
-    googEchoCancellation: true,
-    // @ts-ignore
-    googEchoCancellation2: true,
-    // @ts-ignore
-    googNoiseSuppression: true,
-    // @ts-ignore
-    googNoiseSuppression2: true,
-    // @ts-ignore
-    googAutoGainControl: true,
-    // @ts-ignore
-    googAutoGainControl2: true,
-    // @ts-ignore
-    googHighpassFilter: true,
-    // @ts-ignore
-    googTypingNoiseDetection: true,
-  };
-
-  // ─────────────────────────────────────────────────────────────
   // SOCKET LISTENERS
-  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const handleAnswer = ({ answer }: any) => {
       setRemoteAnswerRef.current?.(answer);
@@ -85,9 +50,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
   }, []);
 
-  // ─────────────────────────────────────────────────────────────
   // CREATE PEER
-  // ─────────────────────────────────────────────────────────────
   const createPeer = (remoteId: string) => {
     remoteStreamRef.current = new MediaStream();
 
@@ -122,27 +85,20 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStreamRef.current;
-
-        // CRITICAL: never mute remote audio based on speaker toggle here —
-        // we apply it after, so the initial play always works.
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.volume = 1;
-
-        // CRITICAL: do NOT set remoteAudioRef.current.srcObject to the local
-        // stream anywhere — that causes instant echo (you hear yourself).
-        remoteAudioRef.current.play().catch(() => {});
-
-        // Now apply speaker mute state if it was toggled before track arrived
         remoteAudioRef.current.muted = isSpeakerMutedRef.current;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.play().catch(() => {});
       }
+    };
+
+    peer.onconnectionstatechange = () => {
+      console.log("🔗 connection:", peer.connectionState);
     };
 
     return peer;
   };
 
-  // ─────────────────────────────────────────────────────────────
   // ICE GATHER HELPER
-  // ─────────────────────────────────────────────────────────────
   const waitForIceGathering = (peer: RTCPeerConnection): Promise<void> => {
     return new Promise((resolve) => {
       if (peer.iceGatheringState === "complete") {
@@ -167,9 +123,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     });
   };
 
-  // ─────────────────────────────────────────────────────────────
   // START CALL
-  // ─────────────────────────────────────────────────────────────
   const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
     if (peerRef.current) {
       cleanup();
@@ -182,7 +136,11 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: AUDIO_CONSTRAINTS,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
         video: type === "video",
       });
 
@@ -191,10 +149,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-        // CRITICAL: mute the local video preview so you don't hear yourself.
-        // This only mutes local playback — it does NOT affect what the remote peer hears.
-        localVideoRef.current.muted = true;
-        localVideoRef.current.volume = 0;
       }
 
       const peer = createPeer(to);
@@ -217,9 +171,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     }
   };
 
-  // ─────────────────────────────────────────────────────────────
   // ACCEPT CALL
-  // ─────────────────────────────────────────────────────────────
   const acceptCall = async (from: string, offer: any, type = "audio") => {
     if (peerRef.current) {
       peerRef.current.ontrack = null;
@@ -234,7 +186,11 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     isSpeakerMutedRef.current = false;
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: AUDIO_CONSTRAINTS,
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
       video: type === "video",
     });
 
@@ -243,9 +199,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = stream;
-      // CRITICAL: mute local preview — same reason as above.
-      localVideoRef.current.muted = true;
-      localVideoRef.current.volume = 0;
     }
 
     const peer = createPeer(from);
@@ -269,9 +222,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     callSocket.setCallStatus("connected");
   };
 
-  // ─────────────────────────────────────────────────────────────
   // ANSWER RECEIVED
-  // ─────────────────────────────────────────────────────────────
   const setRemoteAnswer = async (answer: any) => {
     if (!peerRef.current) return;
 
@@ -286,9 +237,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   };
   setRemoteAnswerRef.current = setRemoteAnswer;
 
-  // ─────────────────────────────────────────────────────────────
   // ICE
-  // ─────────────────────────────────────────────────────────────
   const addIceCandidate = async (candidate: any) => {
     if (!peerRef.current) return;
 
@@ -306,10 +255,9 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   };
   addIceCandidateRef.current = addIceCandidate;
 
-  // ─────────────────────────────────────────────────────────────
   // CLEANUP
-  // ─────────────────────────────────────────────────────────────
   const cleanup = () => {
+
     if (peerRef.current) {
       peerRef.current.ontrack = null;
       peerRef.current.onicecandidate = null;
@@ -323,24 +271,17 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     }
 
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = null;
-      remoteAudioRef.current.muted = false;
-    }
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = null;
-      localVideoRef.current.muted = true;
-    }
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
 
     remoteStreamRef.current = null;
   };
   cleanupRef.current = cleanup;
 
-  // ─────────────────────────────────────────────────────────────
   // END CALL
-  // ─────────────────────────────────────────────────────────────
   const endCall = () => {
     if (!peerRef.current) return;
+
 
     if (activeCallUserId) {
       socket.emit("end-call", { to: activeCallUserId });
@@ -354,9 +295,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     setActiveCallUserId(null);
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // TOGGLE MUTE
-  // ─────────────────────────────────────────────────────────────
+  // 🎤 TOGGLE MUTE
   const toggleMute = () => {
     if (!localStreamRef.current) return false;
     isMutedRef.current = !isMutedRef.current;
@@ -366,9 +305,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     return isMutedRef.current;
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // SWITCH CAMERA
-  // ─────────────────────────────────────────────────────────────
+  // SWITCH CAMERA (front <-> rear)
   const facingModeRef = useRef<"user" | "environment">("user");
 
   const switchCamera = async (): Promise<boolean> => {
@@ -385,6 +322,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
       const newVideoTrack = newStream.getVideoTracks()[0];
 
+      // replaceTrack swaps the track on the peer without renegotiation
       const sender = peerRef.current
         .getSenders()
         .find((s) => s.track?.kind === "video");
@@ -393,6 +331,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
         await sender.replaceTrack(newVideoTrack);
       }
 
+      // Stop old track and swap into localStream
       const oldVideoTrack = localStreamRef.current.getVideoTracks()[0];
       if (oldVideoTrack) {
         oldVideoTrack.stop();
@@ -400,25 +339,22 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       }
       localStreamRef.current.addTrack(newVideoTrack);
 
+      // Update local preview
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
-        // Re-apply mute after srcObject reassignment
-        localVideoRef.current.muted = true;
-        localVideoRef.current.volume = 0;
       }
 
       return true;
     } catch (err) {
       console.error("switchCamera error", err);
+      // Revert facing mode on failure
       facingModeRef.current =
         facingModeRef.current === "user" ? "environment" : "user";
       return false;
     }
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // TOGGLE SPEAKER
-  // ─────────────────────────────────────────────────────────────
+  // 🔊 TOGGLE SPEAKER
   const toggleSpeaker = () => {
     isSpeakerMutedRef.current = !isSpeakerMutedRef.current;
     if (remoteAudioRef.current) {
