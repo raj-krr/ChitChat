@@ -24,6 +24,20 @@ This project prioritizes:
 
 ---
 
+## 🎬 App Demo
+
+<div align="center" style="margin-bottom: 30px;">
+  <img src="assets/heropage.png" width="800" style="margin: 10px; border-radius: 12px; margin-bottom: 100px;" />
+  <img src="assets/mobileview.jpeg" width="280" style="margin: 10px; border-radius: 12px;" />
+</div>
+
+<div align="center" style="margin-bottom: 30px;">
+  <img src="assets/aichat.png" width="540" style="margin: 10px; border-radius: 12px;" />
+  <img src="assets/userchat.png" width="540" style="margin: 10px; border-radius: 12px;" />
+</div>
+
+
+---
 ## 🚀 Core Capabilities
 
 * Secure user authentication (JWT-based)
