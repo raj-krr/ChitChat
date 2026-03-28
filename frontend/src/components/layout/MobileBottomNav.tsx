@@ -26,7 +26,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { key: "home",          icon: MessageCircle, label: "Chats",   route: "/dashboard"     },
-  { key: "search",        icon: Search,        label: "Search",  route: "/search"        },
+  { key: "search",        icon: Search,        label: "Search",  route: "/dashboard"        },
   { key: "notifications", icon: Bell,          label: "Alerts",  route: "/notifications" },
   { key: "profile",       icon: User,          label: "Profile", route: "/profile"       },
 ];
