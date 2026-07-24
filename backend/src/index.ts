@@ -21,10 +21,22 @@ async function startServer() {
     
     const server = http.createServer(app);
 
+    const allowedOrigins = [
+      process.env.FRONTEND_URL?.replace(/\/$/, ""),
+      "http://localhost:5173",
+    ].filter(Boolean);
+
     const io = new Server(server, {
-      transports: ["websocket"],
+      transports: ["polling", "websocket"],
       cors: {
-        origin: process.env.FRONTEND_URL,
+        origin: (origin, callback) => {
+          if (!origin) return callback(null, true);
+          const cleanOrigin = origin.replace(/\/$/, "");
+          if (allowedOrigins.includes(cleanOrigin) || origin.endsWith(".vercel.app")) {
+            return callback(null, true);
+          }
+          return callback(new Error("CORS Policy Violation"));
+        },
         credentials: true,
       },
     });
@@ -32,7 +44,7 @@ async function startServer() {
     setIO(io);
     initSocket(io);
 
-       server.listen(port, () => {
+    server.listen(port, () => {
       console.log(`🚀 Server running on port ${port}`);
     });
   } catch (err) {

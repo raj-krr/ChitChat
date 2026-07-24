@@ -17,39 +17,48 @@ export function PresenceProvider({ children }: any) {
 
   useEffect(() => {
     const onUserOnline = (userId: string) => {
-      setOnlineUsers(prev => {
+      setOnlineUsers((prev) => {
         const next = new Set(prev);
         next.add(userId);
         return next;
       });
     };
-const onOnlineUsers = (users: string[]) => {
-  setOnlineUsers(new Set(users));
-};
+
+    const onOnlineUsers = (users: string[]) => {
+      setOnlineUsers(new Set(users));
+    };
 
     const onUserOffline = ({ userId, lastSeen }: any) => {
-      setOnlineUsers(prev => {
+      setOnlineUsers((prev) => {
         const next = new Set(prev);
         next.delete(userId);
         return next;
       });
 
-      setLastSeen(prev => ({
+      setLastSeen((prev) => ({
         ...prev,
         [userId]: lastSeen,
       }));
     };
 
-socket.on("online-users", onOnlineUsers);
-    socket.on("user-online", onUserOnline);
-      socket.on("user-offline", onUserOffline);
-    
+    const fetchOnline = () => {
+      socket.emit("get-online-users");
+    };
 
+    socket.on("online-users", onOnlineUsers);
+    socket.on("user-online", onUserOnline);
+    socket.on("user-offline", onUserOffline);
+    socket.on("connect", fetchOnline);
+
+    if (socket.connected) {
+      fetchOnline();
+    }
 
     return () => {
       socket.off("user-online", onUserOnline);
-        socket.off("user-offline", onUserOffline);
-          socket.off("online-users", onOnlineUsers);
+      socket.off("user-offline", onUserOffline);
+      socket.off("online-users", onOnlineUsers);
+      socket.off("connect", fetchOnline);
     };
   }, []);
 

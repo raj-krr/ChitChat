@@ -42,10 +42,13 @@ export function initSocket(io: Server) {
     const userId = socket.data.userId as string;
     console.log("✅ SOCKET CONNECTED:", userId);
 
-    socket.emit("online-users", Array.from(onlineUsers.keys()));
-
     onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("user-online", userId);
+    socket.emit("online-users", Array.from(onlineUsers.keys()));
+
+    socket.on("get-online-users", () => {
+      socket.emit("online-users", Array.from(onlineUsers.keys()));
+    });
 
     socket.on("typing", ({ to }) => {
       const socketId = onlineUsers.get(to);
