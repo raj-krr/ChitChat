@@ -4,6 +4,8 @@ import { sanitizeUser } from "../../utils/sanitizeUser";
 import fs from "fs";
 import path from "path";
 import { uploadMediaFile } from "../../libs/uploadHelper";
+import { getDefaultAnimeAvatar } from "../../utils/constants";
+
 
 
 
@@ -34,24 +36,11 @@ export const updateProfile = async (req: Request, res: Response) => {
       const genderKey = gender.toLowerCase();
       updateData.gender = genderKey;
 
-       if (user.avatarSource !== "user") {
-        const avatarFolders: Record<string, string[]> = {
-          male: ["Boy05.png", "Boy06.png", "Boy13.png", "Boy14.png", "Boy18.png", "Boy19.png", "Boy20.png", "Boy02.png"],
-          female: ["Girl08.png", "Girl01.png", "Girl11.png", "Girl19.png", "Girl18.png", "Girl04.png", "Girl06.png", "Girl14.png", "Girl03.png"],
-          other: ["avatar1.png", "avatar2.png", "avatar3.png", "avatar4.png", "avatar5.png"],
-        };
-
-        const fileList =
-          avatarFolders[genderKey] || avatarFolders.other;
-
-        const index =
-          Array.from(userID.toString()).reduce(
-            (sum, c) => sum + c.charCodeAt(0),
-            0
-          ) % fileList.length;
-
-        updateData.avatar = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${genderKey}/${fileList[index]}`;
+      if (user.avatarSource !== "user" || !user.avatar || user.avatar.includes("s3.amazonaws.com")) {
+        updateData.avatar = getDefaultAnimeAvatar(genderKey, userID.toString());
+        updateData.avatarSource = "auto";
       }
+
     }
 
 
@@ -145,33 +134,14 @@ export const getprofile = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, msg: "User not found" });
     }
 
-    // AUTO ASSIGN AVATAR
-    if (!user.avatar) {
+    // AUTO ASSIGN ANIME AVATAR IF NOT SET OR BROKEN S3 LINK
+    if (!user.avatar || user.avatarSource !== "user" || user.avatar.includes("s3.amazonaws.com")) {
       const genderKey = (user.gender || "male").toLowerCase();
-
-      const avatarFolders: Record<string, string[]> = {
-        male: [
-          "Boy05.png","Boy06.png","Boy13.png","Boy14.png",
-          "Boy18.png","Boy19.png","Boy20.png","Boy02.png",
-        ],
-        female: [
-          "Girl08.png","Girl01.png","Girl11.png","Girl19.png",
-          "Girl18.png","Girl04.png","Girl06.png","Girl14.png","Girl03.png",
-        ],
-        other: ["avatar1.png","avatar2.png","avatar3.png"],
-      };
-
-      const list = avatarFolders[genderKey] || avatarFolders.male;
-      const index =
-        Array.from(userID.toString()).reduce(
-          (sum, c) => sum + c.charCodeAt(0),
-          0
-        ) % list.length;
-
-      user.avatar = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${genderKey}/${list[index]}`;
+      user.avatar = getDefaultAnimeAvatar(genderKey, userID.toString());
       user.avatarSource = "auto";
       await user.save();
     }
+
 
     const safeUser = sanitizeUser(user);
 

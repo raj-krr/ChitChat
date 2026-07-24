@@ -7,6 +7,8 @@ import { error } from "console";
 import { generateAccessToken, generateToken } from "../../utils/generateToken";
 import { AccessOptions, logoutOptions, RefreshOptions } from "../../utils/cookie";
 import  jwt from "jsonwebtoken";
+import { getDefaultAnimeAvatar } from "../../utils/constants";
+
 
  export const register = async (req: Request, res: Response) => {
     const { email, username, password } = req.body;
@@ -130,10 +132,15 @@ export const verifyEmail = async (req: Request, res: Response) => {
     }
 
     user.isVerified = true;
+    if (!user.avatar) {
+      user.avatar = getDefaultAnimeAvatar(user.gender || "male", user._id.toString());
+      user.avatarSource = "auto";
+    }
     user.verificationCode = undefined;
     user.verificationCodeExpires = undefined;
     user.updatedAt = new Date();
     await user.save();
+
 
     welcomeEmail(user.email, user.username).catch((err) =>
       console.error("failed to send welcome email", err)
@@ -264,8 +271,7 @@ export const logout = async (req: Request, res: Response) => {
     }
 };
 
-export const checkAuth = (req: Request, res: Response) => {
-
+export const checkAuth = async (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
@@ -274,9 +280,25 @@ export const checkAuth = (req: Request, res: Response) => {
     return res.status(401).json({ authenticated: false });
   }
 
+  const user = await UserMOdel.findById(req.user.userId);
+  if (!user) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  const avatar = (!user.avatar || user.avatarSource !== "user" || user.avatar.includes("amazonaws.com"))
+    ? getDefaultAnimeAvatar(user.gender || "male", user._id.toString())
+    : user.avatar;
+
   return res.status(200).json({
     authenticated: true,
-    user: req.user 
+    user: {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      gender: user.gender,
+      avatar,
+      avatarSource: user.avatarSource,
+    } 
   });
 };
 
@@ -301,19 +323,26 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 
     res.cookie("accessToken", newAccessToken, AccessOptions);
 
-    const safeUser = {
-  _id: user._id,
-  username: user.username,
-  email: user.email,
-  avatar: user.avatar,
-};
+    const avatar = (!user.avatar || user.avatarSource !== "user" || user.avatar.includes("amazonaws.com"))
+      ? getDefaultAnimeAvatar(user.gender || "male", user._id.toString())
+      : user.avatar;
 
-return res.status(200).json({
-  success: true,
-  user: safeUser,
-});
+    const safeUser = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      gender: user.gender,
+      avatar,
+      avatarSource: user.avatarSource,
+    };
+
+    return res.status(200).json({
+      success: true,
+      user: safeUser,
+    });
   } catch {
     return res.status(401).json({ success: false });
   }
 };
+
 

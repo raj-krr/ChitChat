@@ -13,6 +13,8 @@ import { IMessage } from "../../models/message.model";
 import { getChatId } from "../../utils/constants";
 import { handleAIBotReply } from "../../libs/aiBot";
 import { uploadMediaFile } from "../../libs/uploadHelper";
+import { getDefaultAnimeAvatar } from "../../utils/constants";
+
 
 type PopulatedReplyTo = {
   _id: Types.ObjectId;
@@ -112,16 +114,19 @@ export const getChatList = async (req: Request, res: Response) => {
 
     const users = await UserMOdel.find({
       _id: { $in: userIds },
-    }).select("username avatar isBot");
+    }).select("username avatar isBot gender");
 
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
     // 7️⃣ Build final response
     const chatList = chats.map((chat) => {
       const user = userMap.get(chat._id.toString());
+      const safeAvatar = (!user?.avatar || user.avatar.includes("amazonaws.com"))
+        ? getDefaultAnimeAvatar((user as any)?.gender || "male", chat._id.toString())
+        : user.avatar;
 
       return {
-        user,
+        user: user ? { ...user.toObject(), avatar: safeAvatar } : null,
         lastMessage: {
           text: chat.lastMessage.text,
           file: chat.lastMessage.file,
@@ -132,6 +137,7 @@ export const getChatList = async (req: Request, res: Response) => {
         lastMessageAt: chat.lastMessage.createdAt,
       };
     });
+
 
     return res.status(200).json({
       success: true,

@@ -4,6 +4,8 @@ import { Request, Response } from "express";
 import UserMOdel from "../../models/user.model";
 import { Types } from "mongoose";
 import Notification from "../../models/notification.modal";
+import { getDefaultAnimeAvatar } from "../../utils/constants";
+
 
 type UserListItem = {
   _id: Types.ObjectId;
@@ -45,7 +47,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
     const [users, total] = await Promise.all([
       UserMOdel.find(filter)
-        .select("username avatar")
+        .select("username avatar gender")
         .sort({ username: 1 })
         .skip(skip)
         .limit(limit),
@@ -79,14 +81,19 @@ export const getAllUsers = async (req: Request, res: Response) => {
       if (sentRequests.has(userId)) requestStatus = "sent";
       else if (receivedRequests.has(userId)) requestStatus = "received";
 
+      const avatar = (!user.avatar || user.avatar.includes("s3.amazonaws.com"))
+        ? getDefaultAnimeAvatar(user.gender || "male", userId)
+        : user.avatar;
+
       return {
         _id: user._id,
         username: user.username,
-        avatar: user.avatar,
+        avatar,
         isFriend: friendsSet.has(userId),
         requestStatus,
       };
     });
+
     const botUser = await UserMOdel.findOne({ isBot: true })
   .select("username avatar");
 
