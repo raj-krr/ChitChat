@@ -10,8 +10,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
   const callSocket = useGlobalCall();
 
-  const callerIceQueueRef = useRef<any[]>([]);
-  const receiverIceQueueRef = useRef<any[]>([]);
+  const pendingIceCandidatesRef = useRef<any[]>([]);
 
   const setRemoteAnswerRef = useRef<((answer: any) => Promise<void>) | undefined>(undefined);
   const addIceCandidateRef = useRef<((candidate: any) => Promise<void>) | undefined>(undefined);
@@ -50,10 +49,18 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
   }, []);
 
+  // Ensure video refs stay bound to streams on render
+  useEffect(() => {
+    if (localStreamRef.current && localVideoRef.current && !localVideoRef.current.srcObject) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+    if (remoteStreamRef.current && remoteVideoRef.current && !remoteVideoRef.current.srcObject) {
+      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    }
+  });
+
   // CREATE PEER
   const createPeer = (remoteId: string) => {
-    remoteStreamRef.current = new MediaStream();
-
     const peer = new RTCPeerConnection({
       iceServers: [
         { urls: ["stun:stun.l.google.com:19302"] },
@@ -77,14 +84,20 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
 
     peer.ontrack = (event) => {
-      remoteStreamRef.current!.addTrack(event.track);
+      const stream = event.streams[0] || remoteStreamRef.current || new MediaStream();
+      remoteStreamRef.current = stream;
+
+      if (event.track && !stream.getTracks().includes(event.track)) {
+        stream.addTrack(event.track);
+      }
 
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch(() => {});
       }
 
       if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStreamRef.current;
+        remoteAudioRef.current.srcObject = stream;
         remoteAudioRef.current.muted = isSpeakerMutedRef.current;
         remoteAudioRef.current.volume = 1;
         remoteAudioRef.current.play().catch(() => {});
@@ -92,7 +105,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
 
     peer.onconnectionstatechange = () => {
-      console.log("🔗 connection:", peer.connectionState);
+      console.log("🔗 WebRTC connection state:", peer.connectionState);
     };
 
     return peer;
@@ -123,14 +136,13 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     });
   };
 
-  // START CALL
+  // START CALL (Caller side)
   const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
     if (peerRef.current) {
       cleanup();
     }
 
-    callerIceQueueRef.current = [];
-    receiverIceQueueRef.current = [];
+    pendingIceCandidatesRef.current = [];
     isMutedRef.current = false;
     isSpeakerMutedRef.current = false;
 
@@ -171,79 +183,103 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     }
   };
 
-  // ACCEPT CALL
+  // ACCEPT CALL (Receiver side)
   const acceptCall = async (from: string, offer: any, type = "audio") => {
     if (peerRef.current) {
-      peerRef.current.ontrack = null;
-      peerRef.current.onicecandidate = null;
-      peerRef.current.close();
-      peerRef.current = null;
+      cleanup();
     }
 
-    callerIceQueueRef.current = [];
-    receiverIceQueueRef.current = [];
+    pendingIceCandidatesRef.current = [];
     isMutedRef.current = false;
     isSpeakerMutedRef.current = false;
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-      video: type === "video",
-    });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: type === "video",
+      });
 
-    localStreamRef.current = stream;
-    setActiveCallUserId(from);
+      localStreamRef.current = stream;
+      setActiveCallUserId(from);
 
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      const peer = createPeer(from);
+      peerRef.current = peer;
+
+      for (const track of stream.getTracks()) {
+        peer.addTrack(track, stream);
+      }
+
+      await peer.setRemoteDescription(new RTCSessionDescription(offer));
+
+      // Flush queued candidates
+      for (const candidate of pendingIceCandidatesRef.current) {
+        try {
+          await peer.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {}
+      }
+      pendingIceCandidatesRef.current = [];
+
+      await peer.setLocalDescription(await peer.createAnswer());
+      await waitForIceGathering(peer);
+
+      socket.emit("answer-call", { to: from, answer: peer.localDescription });
+
+      if (remoteAudioRef.current && remoteStreamRef.current) {
+        remoteAudioRef.current.srcObject = remoteStreamRef.current;
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.play().catch(() => {});
+      }
+
+      callSocket.setCallStatus("connected");
+    } catch (err) {
+      console.error("❌ acceptCall error", err);
     }
-
-    const peer = createPeer(from);
-    peerRef.current = peer;
-
-    for (const track of stream.getTracks()) {
-      peer.addTrack(track, stream);
-    }
-
-    await peer.setRemoteDescription(new RTCSessionDescription(offer));
-
-    for (const candidate of receiverIceQueueRef.current) {
-      await peer.addIceCandidate(new RTCIceCandidate(candidate));
-    }
-    receiverIceQueueRef.current = [];
-
-    await peer.setLocalDescription(await peer.createAnswer());
-    await waitForIceGathering(peer);
-
-    socket.emit("answer-call", { to: from, answer: peer.localDescription });
-    callSocket.setCallStatus("connected");
   };
 
-  // ANSWER RECEIVED
+  // ANSWER RECEIVED (Caller side)
   const setRemoteAnswer = async (answer: any) => {
     if (!peerRef.current) return;
 
-    await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+    try {
+      await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
 
-    for (const candidate of callerIceQueueRef.current) {
-      await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      for (const candidate of pendingIceCandidatesRef.current) {
+        try {
+          await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {}
+      }
+      pendingIceCandidatesRef.current = [];
+
+      // Ensure caller's remote audio element plays
+      if (remoteAudioRef.current && remoteStreamRef.current) {
+        remoteAudioRef.current.srcObject = remoteStreamRef.current;
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.play().catch(() => {});
+      }
+
+      callSocket.setCallStatus("connected");
+    } catch (err) {
+      console.error("❌ setRemoteAnswer error", err);
     }
-    callerIceQueueRef.current = [];
-
-    callSocket.setCallStatus("connected");
   };
   setRemoteAnswerRef.current = setRemoteAnswer;
 
-  // ICE
+  // ADD ICE CANDIDATE
   const addIceCandidate = async (candidate: any) => {
     if (!peerRef.current) return;
 
     if (!peerRef.current.remoteDescription) {
-      callerIceQueueRef.current.push(candidate);
-      receiverIceQueueRef.current.push(candidate);
+      pendingIceCandidatesRef.current.push(candidate);
       return;
     }
 
@@ -257,7 +293,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
   // CLEANUP
   const cleanup = () => {
-
     if (peerRef.current) {
       peerRef.current.ontrack = null;
       peerRef.current.onicecandidate = null;
@@ -275,14 +310,12 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
 
     remoteStreamRef.current = null;
+    pendingIceCandidatesRef.current = [];
   };
   cleanupRef.current = cleanup;
 
   // END CALL
   const endCall = () => {
-    if (!peerRef.current) return;
-
-
     if (activeCallUserId) {
       socket.emit("end-call", { to: activeCallUserId });
     }
@@ -295,7 +328,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     setActiveCallUserId(null);
   };
 
-  // 🎤 TOGGLE MUTE
+  // TOGGLE MUTE
   const toggleMute = () => {
     if (!localStreamRef.current) return false;
     isMutedRef.current = !isMutedRef.current;
@@ -305,7 +338,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     return isMutedRef.current;
   };
 
-  // SWITCH CAMERA (front <-> rear)
+  // SWITCH CAMERA
   const facingModeRef = useRef<"user" | "environment">("user");
 
   const switchCamera = async (): Promise<boolean> => {
@@ -322,7 +355,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
       const newVideoTrack = newStream.getVideoTracks()[0];
 
-      // replaceTrack swaps the track on the peer without renegotiation
       const sender = peerRef.current
         .getSenders()
         .find((s) => s.track?.kind === "video");
@@ -331,7 +363,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
         await sender.replaceTrack(newVideoTrack);
       }
 
-      // Stop old track and swap into localStream
       const oldVideoTrack = localStreamRef.current.getVideoTracks()[0];
       if (oldVideoTrack) {
         oldVideoTrack.stop();
@@ -339,7 +370,6 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       }
       localStreamRef.current.addTrack(newVideoTrack);
 
-      // Update local preview
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
       }
@@ -347,14 +377,13 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       return true;
     } catch (err) {
       console.error("switchCamera error", err);
-      // Revert facing mode on failure
       facingModeRef.current =
         facingModeRef.current === "user" ? "environment" : "user";
       return false;
     }
   };
 
-  // 🔊 TOGGLE SPEAKER
+  // TOGGLE SPEAKER
   const toggleSpeaker = () => {
     isSpeakerMutedRef.current = !isSpeakerMutedRef.current;
     if (remoteAudioRef.current) {
