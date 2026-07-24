@@ -3,57 +3,27 @@ import MessageModal from "../models/message.model";
 import { getIO } from "../socketEmitter";
 import { onlineUsers } from "../socket";
 import { BOT_USER_ID } from "../utils/constants";
+import { callGroq, ChatMessage } from "./groq";
 
 function fakeAIReply(userMessage: string): string {
   const msg = userMessage.toLowerCase();
 
   if (msg.includes("hello") || msg.includes("hi"))
-    return "Heyyy 😄 What’s up?";
+    return "Hey! What's up?";
 
   if (msg.includes("how are you"))
-    return "I’m doing good 😊 just chilling here. You?";
+    return "I'm doing good, just chilling. You?";
 
   if (msg.includes("help"))
-    return "Sure! Tell me what you need 👀";
+    return "Sure, tell me what you need.";
 
   if (msg.includes("bye"))
-    return "Bye bye 👋 Take care!";
+    return "Bye, take care!";
 
   if (msg.includes("thanks"))
-    return "Anytimeee 😄";
+    return "Anytime!";
 
-  return "Haha 😄 tell me more!";
-}
-
-async function callGemini(prompt: string): Promise<string> {
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": process.env.GEMINI_API_KEY!,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error(await res.text());
-  }
-
-  const data = await res.json();
-  return (
-    data.candidates?.[0]?.content?.parts?.[0]?.text ||
-    "🙂"
-  );
+  return "Haha, tell me more!";
 }
 
 export async function handleAIBotReply({
@@ -72,39 +42,38 @@ export async function handleAIBotReply({
     io.to(socketId).emit("typing", { from: BOT_USER_ID });
   }
 
+  // Fetch recent conversation context
   const history = await MessageModal.find({ chatId })
     .sort({ createdAt: -1 })
     .limit(6)
     .lean();
 
-  const context = history
-    .reverse()
-    .map((m) =>
-      m.senderId.toString() === BOT_USER_ID
-        ? `AI: ${m.text}`
-        : `User: ${m.text}`
-    )
-    .join("\n");
+  const formattedMessages: ChatMessage[] = [
+    {
+      role: "system",
+      content:
+        "You are ChitChat AI, a friendly and casual texting buddy. Keep your replies short, natural, and conversational, like a real person sending a text message. Do NOT spam or overuse emojis — use at most one emoji only when it feels natural, otherwise use no emojis at all.",
+    },
+  ];
 
-  const prompt = `
-You are ChitChat AI 🤖.
-You are friendly, casual, and helpful.
-Talk like a real friend.
-Keep replies short, natural, and fun.
-Use emojis sometimes 😊.
+  history.reverse().forEach((m) => {
+    formattedMessages.push({
+      role: m.senderId.toString() === BOT_USER_ID ? "assistant" : "user",
+      content: m.text || "",
+    });
+  });
 
-Conversation so far:
-${context}
+  formattedMessages.push({
+    role: "user",
+    content: userMessage,
+  });
 
-User: ${userMessage}
-AI:
-`;
-
-  let reply = "🙂";
+  let reply = "Got it.";
 
   try {
-    reply = await callGemini(prompt);
-  } catch {
+    reply = await callGroq(formattedMessages);
+  } catch (err: any) {
+    console.warn("⚠️ Groq API failed, using fallback reply:", err?.message || err);
     reply = fakeAIReply(userMessage);
   }
 
@@ -117,8 +86,8 @@ AI:
     senderId: BOT_USER_ID,
     receiverId: userId,
     text: reply,
-      status: "sent",
-     isRead: true,
+    status: "sent",
+    isRead: true,
     clientId: crypto.randomUUID(),
   });
 
