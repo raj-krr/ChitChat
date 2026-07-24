@@ -1,8 +1,11 @@
 import { io } from "socket.io-client";
 
-export const socket = io(import.meta.env.VITE_API_SOCKET_URL || "/", {
+const socketUrl =
+  import.meta.env.VITE_API_SOCKET_URL || "https://chitchat-7hbs.onrender.com";
+
+export const socket = io(socketUrl, {
   withCredentials: true,
-  autoConnect: false, 
+  autoConnect: false,
   transports: ["polling", "websocket"],
   timeout: 20000,
 });

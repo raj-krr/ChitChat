@@ -187,7 +187,10 @@ export function initSocket(io: Server) {
     socket.on("disconnect", () => {
       console.log("❌ SOCKET DISCONNECTED:", userId);
 
-      onlineUsers.delete(userId);
+      if (onlineUsers.get(userId) === socket.id) {
+        onlineUsers.delete(userId);
+        socket.broadcast.emit("user-offline", { userId, lastSeen: new Date() });
+      }
 
       const partner = ongoingCalls.get(userId);
       if (partner) {
@@ -198,9 +201,8 @@ export function initSocket(io: Server) {
         ongoingCalls.delete(userId);
         ongoingCalls.delete(partner);
       }
-
-      socket.broadcast.emit("user-offline", { userId, lastSeen: new Date() });
     });
+
   });
 }
 
