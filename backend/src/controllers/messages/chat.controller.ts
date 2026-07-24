@@ -12,6 +12,7 @@ import mongoose from "mongoose";
 import { IMessage } from "../../models/message.model";
 import { getChatId } from "../../utils/constants";
 import { handleAIBotReply } from "../../libs/aiBot";
+import { uploadMediaFile } from "../../libs/uploadHelper";
 
 type PopulatedReplyTo = {
   _id: Types.ObjectId;
@@ -244,25 +245,23 @@ const allowedMimesTypes = [
         });
       }
 
-      const senderIdStr = sender._id.toString();
-      const receiverIdStr = receiver._id.toString();
-
-      const fileExt = path.extname(req.file.originalname);
-      const fileKey = `${senderIdStr}/${receiverIdStr}-${Date.now()}${fileExt}`;
-      const fileContent = fs.readFileSync(req.file.path);
-
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME!,
-          Key: fileKey,
-          Body: fileContent,
-          ContentType: req.file.mimetype,
-        })
-      );
-
-      fs.unlinkSync(req.file.path);
-
-      fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+      try {
+        fileUrl = await uploadMediaFile({
+          filePath: req.file.path,
+          fileName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          folder: `messages/${sender._id}/${receiver._id}`,
+        });
+      } catch (err: any) {
+        return res.status(500).json({
+          success: false,
+          msg: "Failed to upload file attachment",
+        });
+      } finally {
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+      }
     }
 
     if (!text && !fileUrl) {

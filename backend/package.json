@@ -28,6 +28,7 @@
     "@types/socket.io": "^3.0.1",
     "@types/socket.io-client": "^1.4.36",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.5.1",
     "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

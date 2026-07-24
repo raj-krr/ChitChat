@@ -3,10 +3,8 @@ import UserMOdel from "../../models/user.model";
 import { sanitizeUser } from "../../utils/sanitizeUser";
 import fs from "fs";
 import path from "path";
-import { s3 } from "../../libs/s3";
-import {
-  PutObjectCommand
-} from "@aws-sdk/client-s3";
+import { uploadMediaFile } from "../../libs/uploadHelper";
+
 
 
 
@@ -97,23 +95,21 @@ if (!allowedMimeTypes.includes(req.file.mimetype)){
 };
 
     const filePath = req.file.path;
-    const fileExt = path.extname(req.file.originalname);
-    const fileKey = `user-avatars/${userID}/profile-${Date.now()}-${fileExt}`;
+    let photoUrl = "";
 
-    // Upload to S3
-    const fileContent = fs.readFileSync(filePath);
-    const uploadParams = {
-      Bucket: process.env.AWS_BUCKET_NAME!,
-      Key: fileKey,
-      Body: fileContent,
-      ContentType: req.file.mimetype,
-    };
+    try {
+      photoUrl = await uploadMediaFile({
+        filePath: filePath,
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        folder: `user-avatars/${userID}`,
+      });
+    } finally {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
 
-    await s3.send(new PutObjectCommand(uploadParams));
-
-    fs.unlinkSync(filePath);
-
-    const photoUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
 
     const updatedUser = await UserMOdel.findByIdAndUpdate(
       userID,
