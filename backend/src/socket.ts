@@ -12,19 +12,27 @@ const ongoingCalls = new Map<string, string>();
 export function initSocket(io: Server) {
   io.use((socket, next) => {
     try {
+      const authUserId = socket.handshake.auth?.userId;
+      if (authUserId) {
+        socket.data.userId = authUserId;
+        return next();
+      }
+
       const rawCookie = socket.handshake.headers.cookie || "";
       const cookies = cookie.parse(rawCookie);
-
       const token = cookies.accessToken;
-      if (!token) return next(new Error("Unauthorized"));
 
-      const decoded = jwt.verify(
-        token,
-        process.env.ACCESS_TOKEN_SECRET!
-      ) as { userId: string };
+      if (token) {
+        const decoded = jwt.verify(
+          token,
+          process.env.ACCESS_TOKEN_SECRET!
+        ) as { userId: string };
 
-      socket.data.userId = decoded.userId;
-      next();
+        socket.data.userId = decoded.userId;
+        return next();
+      }
+
+      return next(new Error("Unauthorized"));
     } catch {
       next(new Error("Unauthorized"));
     }

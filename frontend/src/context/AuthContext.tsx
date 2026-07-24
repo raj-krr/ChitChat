@@ -27,7 +27,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const res = await refreshApi();
       setUser(res.data.user);
       setIsAuth(true);
-      socket.connect();
+      if (res.data.user?._id) {
+        socket.auth = { userId: res.data.user._id };
+        socket.connect();
+      }
     } catch {
       setIsAuth(false);
       setUser(null);
