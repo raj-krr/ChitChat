@@ -29,7 +29,7 @@ async function startServer() {
     ].filter(Boolean) as string[];
 
     const io = new Server(server, {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       cors: {
         origin: (origin, callback) => {
           if (!origin) return callback(null, true);

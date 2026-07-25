@@ -28,7 +28,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(res.data.user);
       setIsAuth(true);
       if (res.data.user?._id) {
-        socket.auth = { userId: res.data.user._id };
+        const userId = String(res.data.user._id);
+        socket.auth = { userId };
+        if (socket.connected) {
+          socket.disconnect();
+        }
         socket.connect();
       }
     } catch {

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 
 export const onlineUsers = new Map<string, string>();
+const userSockets = new Map<string, Set<string>>();
 
 const userLastMessage = new Map<string, number>();
 const messageTracker = new Map<string, number[]>();
@@ -14,7 +15,7 @@ export function initSocket(io: Server) {
     try {
       const authUserId = socket.handshake.auth?.userId;
       if (authUserId) {
-        socket.data.userId = authUserId;
+        socket.data.userId = String(authUserId);
         return next();
       }
 
@@ -28,7 +29,7 @@ export function initSocket(io: Server) {
           process.env.ACCESS_TOKEN_SECRET!
         ) as { userId: string };
 
-        socket.data.userId = decoded.userId;
+        socket.data.userId = String(decoded.userId);
         return next();
       }
 
@@ -39,10 +40,19 @@ export function initSocket(io: Server) {
   });
 
   io.on("connection", (socket: Socket) => {
-    const userId = socket.data.userId as string;
-    console.log("✅ SOCKET CONNECTED:", userId);
+    const userId = String(socket.data.userId);
+    console.log("✅ SOCKET CONNECTED:", userId, socket.id);
 
+    // Join Room named after userId
+    socket.join(userId);
+
+    // Track sockets per user
+    if (!userSockets.has(userId)) {
+      userSockets.set(userId, new Set());
+    }
+    userSockets.get(userId)!.add(socket.id);
     onlineUsers.set(userId, socket.id);
+
     socket.broadcast.emit("user-online", userId);
     socket.emit("online-users", Array.from(onlineUsers.keys()));
 
@@ -51,18 +61,22 @@ export function initSocket(io: Server) {
     });
 
     socket.on("typing", ({ to }) => {
-      const socketId = onlineUsers.get(to);
-      if (socketId) {
-        io.to(socketId).emit("typing", { from: userId });
+      if (to) {
+        io.to(String(to)).emit("typing", { from: userId });
+      }
+    });
+
+    socket.on("stop-typing", ({ to }) => {
+      if (to) {
+        io.to(String(to)).emit("stop-typing", { from: userId });
       }
     });
 
     socket.on("call-user", ({ to, offer, user, type }) => {
       if (!to || !offer) return;
 
-      const toSocketId = onlineUsers.get(to);
-
-      if (!toSocketId) {
+      const targetId = String(to);
+      if (!onlineUsers.has(targetId)) {
         socket.emit("error", "User is offline");
         return;
       }
@@ -72,15 +86,15 @@ export function initSocket(io: Server) {
         return;
       }
 
-      if (ongoingCalls.has(to)) {
-        socket.emit("call-busy", { to });
+      if (ongoingCalls.has(targetId)) {
+        socket.emit("call-busy", { to: targetId });
         return;
       }
 
-      ongoingCalls.set(userId, to);
-      ongoingCalls.set(to, userId);
+      ongoingCalls.set(userId, targetId);
+      ongoingCalls.set(targetId, userId);
 
-      io.to(toSocketId).emit("incoming-call", {
+      io.to(targetId).emit("incoming-call", {
         from: userId,
         offer,
         user,
@@ -90,54 +104,40 @@ export function initSocket(io: Server) {
 
     socket.on("answer-call", ({ to, answer }) => {
       if (!to || !answer) return;
+      const targetId = String(to);
 
-      if (!ongoingCalls.has(userId)) ongoingCalls.set(userId, to);
-      if (!ongoingCalls.has(to)) ongoingCalls.set(to, userId);
+      if (!ongoingCalls.has(userId)) ongoingCalls.set(userId, targetId);
+      if (!ongoingCalls.has(targetId)) ongoingCalls.set(targetId, userId);
 
-      const toSocketId = onlineUsers.get(to);
-      if (toSocketId) {
-        io.to(toSocketId).emit("call-answered", { from: userId, answer });
-      }
+      io.to(targetId).emit("call-answered", { from: userId, answer });
     });
 
     socket.on("reject-call", ({ to }) => {
-      const toSocketId = onlineUsers.get(to);
-      if (toSocketId) {
-        io.to(toSocketId).emit("call-rejected", { from: userId });
-      }
+      const targetId = String(to);
+      io.to(targetId).emit("call-rejected", { from: userId });
       ongoingCalls.delete(userId);
-      ongoingCalls.delete(to);
+      ongoingCalls.delete(targetId);
     });
 
     socket.on("end-call", ({ to }) => {
-      const toSocketId = onlineUsers.get(to);
-      if (toSocketId) {
-        io.to(toSocketId).emit("call-ended", { from: userId });
-      }
+      const targetId = String(to);
+      io.to(targetId).emit("call-ended", { from: userId });
       ongoingCalls.delete(userId);
-      ongoingCalls.delete(to);
+      ongoingCalls.delete(targetId);
     });
 
     socket.on("call-missed", ({ to }) => {
       if (!to) return;
-
-      const toSocketId = onlineUsers.get(to);
-      if (toSocketId) {
-        io.to(toSocketId).emit("call-missed", { from: userId });
-      }
-
+      const targetId = String(to);
+      io.to(targetId).emit("call-missed", { from: userId });
       ongoingCalls.delete(userId);
-      ongoingCalls.delete(to);
-
+      ongoingCalls.delete(targetId);
     });
 
     socket.on("ice-candidate", ({ to, candidate }) => {
       if (!to || !candidate) return;
-
-      const toSocketId = onlineUsers.get(to);
-      if (toSocketId) {
-        io.to(toSocketId).emit("ice-candidate", { from: userId, candidate });
-      }
+      const targetId = String(to);
+      io.to(targetId).emit("ice-candidate", { from: userId, candidate });
     });
 
     const handleMessage = (data: any) => {
@@ -175,29 +175,29 @@ export function initSocket(io: Server) {
         return;
       }
 
-      const toSocketId = onlineUsers.get(data.to);
-      if (toSocketId) {
-        io.to(toSocketId).emit("receive_message", { from: userId, message: data.message });
-      }
+      const targetId = String(data.to);
+      io.to(targetId).emit("receive_message", { from: userId, message: data.message });
     };
 
     socket.on("send_message", handleMessage);
     socket.on("message", handleMessage);
 
     socket.on("disconnect", () => {
-      console.log("❌ SOCKET DISCONNECTED:", userId);
+      console.log("❌ SOCKET DISCONNECTED:", userId, socket.id);
 
-      if (onlineUsers.get(userId) === socket.id) {
-        onlineUsers.delete(userId);
-        socket.broadcast.emit("user-offline", { userId, lastSeen: new Date() });
+      const sockets = userSockets.get(userId);
+      if (sockets) {
+        sockets.delete(socket.id);
+        if (sockets.size === 0) {
+          userSockets.delete(userId);
+          onlineUsers.delete(userId);
+          socket.broadcast.emit("user-offline", { userId, lastSeen: new Date() });
+        }
       }
 
       const partner = ongoingCalls.get(userId);
       if (partner) {
-        const partnerSocket = onlineUsers.get(partner);
-        if (partnerSocket) {
-          io.to(partnerSocket).emit("call-ended", { from: userId });
-        }
+        io.to(partner).emit("call-ended", { from: userId });
         ongoingCalls.delete(userId);
         ongoingCalls.delete(partner);
       }
