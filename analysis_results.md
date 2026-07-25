@@ -162,13 +162,13 @@ Here's why:
 
 ### High Priority (Do These First)
 
-| # | Feature/Improvement | Why It Matters |
-|---|---------------------|---------------|
-| 1 | **Add Tests** — at least 10-15 API tests with Jest + Supertest | Every interviewer asks "where are your tests?" |
-| 2 | **Input Validation** — add Zod schemas for all API endpoints | Shows you care about data integrity and security |
-| 3 | **Group Chat** — create a `Chat` model with `type: "group"` | The #1 missing feature that every interviewer expects |
-| 4 | **Fix the `.env` exposure** — add to `.gitignore`, rotate secrets | 🚨 Critical security fix |
-| 5 | **Add Redis** — for session caching, online user tracking, pub/sub | Shows you understand caching and scalability |
+| # | Feature/Improvement | Why It Matters | Status |
+|---|---------------------|---------------|--------|
+| 1 | **Add Tests** — at least 10-15 API tests with Jest + Supertest | Every interviewer asks "where are your tests?" | ✅ **COMPLETED (Phase 2)** |
+| 2 | **Input Validation** — add Zod schemas for all API endpoints | Shows you care about data integrity and security | ✅ **COMPLETED (Phase 2)** |
+| 3 | **Group Chat** — create a `Chat` model with `type: "group"` | The #1 missing feature that every interviewer expects | ⏳ Planned (Phase 5) |
+| 4 | **Fix the `.env` exposure** — add to `.gitignore`, rotate secrets | 🚨 Critical security fix | ✅ **COMPLETED (Phase 1)** |
+| 5 | **Add Redis** — for session caching, online user tracking, pub/sub | Shows you understand caching and scalability | ⏳ Planned (Phase 5) |
 
 ### Medium Priority (Strong Differentiators)
 
