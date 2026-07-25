@@ -317,28 +317,21 @@ export const sendMessages = async (req: Request, res: Response) => {
 
     const receiverIdStr = receiver._id.toString();
     const senderIdStr = sender._id.toString();
-
-    const receiverSocketId = onlineUsers.get(receiverIdStr);
     const io = getIO();
 
-    const senderSocketId = onlineUsers.get(senderIdStr);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("new-message", {
-        message: msg,
-      });
-    }
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("new-message", {
-        message: {
-          ...msg,
-          clientId,
-        },
-      });
+    io.to(senderIdStr).emit("new-message", {
+      message: msg,
+    });
+    io.to(receiverIdStr).emit("new-message", {
+      message: {
+        ...msg,
+        clientId,
+      },
+    });
+    io.to(receiverIdStr).emit("unread-update", {
+      from: senderIdStr,
+    });
 
-      io.to(receiverSocketId).emit("unread-update", {
-        from: senderIdStr,
-      });
-    }
     if (receiver.isBot) {
       handleAIBotReply({
         chatId: chatId.toString(),
@@ -378,13 +371,9 @@ export const markMessagesAsRead = async (req: Request, res: Response) => {
   );
 
   const io = getIO();
-
-  const friendSocket = onlineUsers.get(friendId);
-  if (friendSocket) {
-    io.to(friendSocket).emit("messages-read", {
-      by: myId,
-    });
-  }
+  io.to(String(friendId)).emit("messages-read", {
+    by: myId,
+  });
 
   return res.json({ success: true });
 };
@@ -436,18 +425,11 @@ export const deleteMessageForEveryone = async (req: Request, res: Response) => {
     await message.save();
 
     const io = getIO();
-
-    const receiverSocketId = onlineUsers.get(message.receiverId.toString());
-    const senderSocketId = onlineUsers.get(userId);
-
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("message-deleted", {
-        messageId,
-      });
-    }
-
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("message-deleted", {
+    io.to(message.receiverId.toString()).emit("message-deleted", {
+      messageId,
+    });
+    if (userId) {
+      io.to(userId).emit("message-deleted", {
         messageId,
       });
     }
@@ -509,21 +491,13 @@ export const reactToMessage = async (req: Request, res: Response) => {
     const senderId = message.senderId.toString();
     const receiverId = message.receiverId.toString();
 
-    const receiverSocketId = onlineUsers.get(receiverId);
-    const senderSocketId = onlineUsers.get(senderId);
-
     const payload = {
       messageId: message._id,
       reactions: message.reactions,
     };
 
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("message-reaction", payload);
-    }
-
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("message-reaction", payload);
-    }
+    io.to(receiverId).emit("message-reaction", payload);
+    io.to(senderId).emit("message-reaction", payload);
 
     return res.json({
       success: true,
