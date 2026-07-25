@@ -3,7 +3,6 @@ import {generateCode } from "../../utils/otp";
 import { forgetPasswordOtpMail, sendVerificationMail, welcomeEmail } from "../../utils/email";
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import { error } from "console";
 import { generateAccessToken, generateToken } from "../../utils/generateToken";
 import { AccessOptions, logoutOptions, RefreshOptions } from "../../utils/cookie";
 import  jwt from "jsonwebtoken";
@@ -199,7 +198,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
         
     const code = generateCode(6);
     user.resetPasswordOtp = code;
-    user.resetPasswordOtpexpires = new Date(Date.now() + 5 * 60 * 60 * 1000);
+    user.resetPasswordOtpexpires = new Date(Date.now() + 5 * 60 * 1000);
     user.updatedAt = new Date();
 
     try {

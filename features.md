@@ -1,94 +1,114 @@
-# 🚀 ChitChat — Features Overview & Product Roadmap
+# 🚀 ChitChat (chitchatt.tech) — Comprehensive Feature Specification & Master Roadmap
 
-**Live Domain**: [chitchatt.tech](https://chitchatt.tech)  
-**Architecture**: React 19 + TypeScript + Vite + Tailwind/Mantine (Frontend) | Express 5 + Node.js + MongoDB + Socket.io + WebRTC (Backend)  
-**AI Engine**: Groq API (`llama-3.3-70b-versatile`)  
-**Media Provider**: Cloudinary (`uploadMediaFile`)
+**Live Production Domain**: [chitchatt.tech](https://chitchatt.tech)  
+**Dual-Deployment Architecture**:
+1. **Active Staging/Production**: Vercel (Frontend) + Render (Backend) + Cloudinary (Media)
+2. **AWS EC2 Production Ready**: Automated GitHub Actions CI/CD ([deploy.yml](file:///c:/Users/ASUS/Desktop/Project/Chat_app/.github/workflows/deploy.yml)) + Docker Compose ([docker-compose.yml](file:///c:/Users/ASUS/Desktop/Project/Chat_app/docker-compose.yml)) + Docker Hub (`rajkrr/chat_app_*`) for 1-click deployment to AWS EC2 + AWS S3 anytime.
+
+**Tech Stack**:
+- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS / DaisyUI / Mantine
+- **Backend**: Node.js + Express 5 + Mongoose 9 + Socket.io 4 + WebRTC
+- **AI Engine**: Groq API (`llama-3.3-70b-versatile`) via direct REST client ([groq.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/libs/groq.ts))
+- **Media Infrastructure**: Cloudinary storage via streamlined uploader ([uploadHelper.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/libs/uploadHelper.ts))
 
 ---
 
-## 🟢 CURRENT LIVE FEATURES (v1.0)
+## 🟢 1. CURRENT LIVE FEATURES (v1.0)
 
-### 1. 💬 Real-Time 1-to-1 Messaging
-* **Socket.io Architecture**: WebSocket connection authenticated via JWT handshake.
-* **Message Delivery States**: Real-time status tracking (`sending` ⏳ → `sent` ✓ → `delivered` ✓✓ → `read` blue ticks).
-* **Typing Indicators**: Real-time "is typing..." event emissions and UI feedback.
-* **Online Presence**: Real-time online/offline status detection for contacts.
-* **Anti-Spam & Flood Protection**: Socket-level rate limiting (800ms cooldown) and flood detection (max 25 msgs/10s with automated 60s mute).
+### 1.1 Dual-Deployment & DevOps Engine (AWS + Render/Vercel)
+* **1-Click AWS EC2 Deployment**: Pre-configured GitHub Actions pipeline (`deploy.yml`) on `production` branch.
+* **Docker Containerization**: Dockerfiles for both services + `docker-compose.yml` orchestrating container builds with SHA-tagging and automated rollback on EC2 failures.
+* **Streamlined Media Storage**: Cloudinary upload pipeline handling image, video, audio, and document uploads.
 
-### 2. 📞 WebRTC Audio & Video Calling
-* **Full Call Lifecycle**: Initiate → Ringing → Answer / Reject → Connected → End.
-* **Busy & Missed Call Handling**: Auto-cutoff after 30s timeout, busy detection when user is already in a call, missed call notification records.
-* **Media Controls**: Mute/unmute microphone, enable/disable video camera, flip camera, toggle speaker.
-* **Ringtone & Audio Feedback**: Custom ringtone, dialtone, and call disconnect audio feedback.
-* **P2P Signaling**: Socket.io ICE candidate and SDP offer/answer exchange.
+### 1.2 Real-Time Messaging & Presence
+* **WebSockets via Socket.io**: Handshake authenticated using JWT HttpOnly cookies or auth tokens.
+* **Message Delivery States**: `sending` ⏳ → `sent` ✓ → `delivered` ✓✓ → `read` 🔵.
+* **Online Presence & Typing Indicators**: Real-time `user-online`, `user-offline`, `typing`, and `stop-typing` broadcasts.
+* **Anti-Spam & Flood Protection**: In-memory rate limiting (800ms cooldown) and sliding-window flood detection (25 msgs/10s triggers 60s temporary mute).
 
-### 3. 🤖 AI Bot Integration (Groq Llama 3.3 70B)
+### 1.3 WebRTC Audio & Video Calling
+* **P2P Signaling**: Socket.io signals ICE candidates, SDP offers, and SDP answers between peers.
+* **Complete Call Lifecycle**: Initiate → Ringing → Answer / Reject → Connected State → End Call.
+* **Busy & Missed Call Handling**: Auto-busy notification if user is in another call; 30-second auto-timeout for unanswered calls.
+* **In-Call Media Controls**: Mute/unmute microphone, toggle video feed, flip camera, toggle speaker.
+* **Ringtone Audio Effects**: Web Audio API ringtones for incoming and outgoing call states.
+
+### 1.4 AI Chatbot Integration (Groq Llama 3.3 70B)
 * **First-Class AI User**: Treated as a dedicated system user (`isBot: true`).
-* **High-Speed Inference**: Direct HTTP integration with Groq (`llama-3.3-70b-versatile`).
-* **Conversational Context**: Keeps memory of the last 6 messages in thread for intelligent, context-aware replies.
-* **Typing Simulation**: Simulates typing indicator delay before sending AI responses.
-* **Rule-Based Fallback**: Rule-based fallback mechanism when Groq API limit or key issue occurs.
+* **High-Speed Inference**: Direct REST integration with Groq API (`llama-3.3-70b-versatile`).
+* **Rolling Context Memory**: Maintains memory of the last 6 messages in thread.
+* **Human-like Delays**: Simulates typing indicator delay before delivering AI responses.
+* **Rule-Based Fallback**: Graceful fallback generator if API rate limits occur.
 
-### 4. 📁 Rich Media & Voice Messages
-* **Cloudinary Uploads**: Images, video files, document PDFs, and audio recordings uploaded via Cloudinary.
-* **Voice Recording UX**: Custom audio recorder with slide-to-cancel and lock-to-record capabilities.
-* **File Previews**: Interactive preview modals before sending media attachments.
-
-### 5. 🔑 Auth & Security System
-* **Dual Token Authentication**: JWT access token + refresh token rotation.
-* **Cookie-Based Storage**: Secure HttpOnly cookies for token management.
-* **Email Verification & OTP**: Nodemailer integration for email OTP verification on registration and password reset.
-* **Multi-Layered Security**: Helmet HTTP headers, CORS origin whitelist, and multi-tier Express rate limiters.
-
-### 6. 👥 Friend & Notification System
-* **Friend Lifecycle**: Send, accept, reject, or cancel friend requests.
-* **User Management**: Block/unblock users, unfriend, and search users by username.
-* **Real-time Notifications**: Badge counts, unread counters, and notification feed for social actions.
-
-### 7. 🛠️ DevOps & Infrastructure
-* **Containerized Deployment**: Docker & Docker Compose setup for frontend and backend.
-* **CI/CD Pipeline**: GitHub Actions with SHA-tagged Docker images and automated rollback on deployment failure.
-* **Production Hosting**: Vercel (Frontend), Render / AWS EC2 (Backend), Cloudinary (Media), routed via custom domain `chitchatt.tech`.
+### 1.5 Authentication & Security System
+* **Dual-Token JWT Architecture**: Access Token + Refresh Token rotation in HttpOnly cookies.
+* **Email OTP Verification**: Nodemailer integration for email verification on sign-up and password reset.
+* **Middleware Chain**: Helmet headers, CORS origin whitelist, tiered Express rate limiters, and chat permission validation.
 
 ---
 
-## 🧹 CLEANUP & DE-BLOAT RECOMMENDATIONS (Lighten Codebase)
+## 🧹 2. COMPLETED CODEBASE CLEANUP & SECURITY FIXES (Phase 1 Completed ✅)
 
-| Service | Unused Package / File | Why Remove | Impact |
-|---------|-----------------------|------------|--------|
-| **Backend** | `@google/generative-ai` | Switched to Groq API ([groq.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/libs/groq.ts)) | Reduces `node_modules` size & build time |
-| **Backend** | `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | Switched to Cloudinary for media uploads | Saves ~45MB of heavy AWS SDK bloat |
-| **Backend** | `s3.ts` ([s3.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/libs/s3.ts)) | Unused AWS client config file | Dead code removal |
-| **Backend** | `socket.io-client` & `@types/socket.io-client` | Backend is a socket server (`socket.io`), client library is unnecessary in backend | Removes redundant dependency |
-| **Frontend** | `@tabler/icons-react` | 0 references across frontend code (app uses Lucide icons) | Reduces bundle size |
-| **Frontend** | `dotenv` & `@types/dotenv` | Vite uses `import.meta.env` natively; `dotenv` is Node-only | Clean runtime dependencies |
+| Service | Category | Action Taken | Reason & Impact | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Backend** | Library Fix | Streamlined [uploadHelper.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/libs/uploadHelper.ts) | Removed broken imports of deleted `s3.ts` and uninstalled `@aws-sdk/client-s3`. | ✅ **Fixed** |
+| **Backend** | Security | Protected `POST /:messageId/react` in [messageRoute.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/routes/messageRoute.ts) | Added missing `authMiddleware` to reaction endpoint. | ✅ **Fixed** |
+| **Backend** | Security | OTP expiration calculation in [auth.controllers.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/user/auth.controllers.ts) | Changed password reset OTP expiry from 5 hours to 5 minutes (`Date.now() + 5 * 60 * 1000`). | ✅ **Fixed** |
+| **Backend** | Security | Hardened Socket CORS in [index.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/index.ts) | Replaced `.vercel.app` wildcard with exact production domain whitelist. | ✅ **Fixed** |
+| **Backend** | Stability | Process crash listeners in [index.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/index.ts) | Added `unhandledRejection` and `uncaughtException` process handlers. | ✅ **Fixed** |
+| **Backend** | Clean Code | Removed `punycode` import in [auth.middleware.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/middlewares/auth.middleware.ts) | Removed dead import of deprecated Node module. | ✅ **Fixed** |
+| **Backend** | Clean Code | Removed `console.error` import in [auth.controllers.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/user/auth.controllers.ts) | Removed unused import. | ✅ **Fixed** |
+| **Backend** | Clean Code | Simplified block check in [chatPermission.middleware.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/middlewares/chatPermission.middleware.ts) | Collapsed duplicate nested `if (receiverBlockedSender)` block. | ✅ **Fixed** |
 
 ---
 
-## 🔮 FUTURE ROADMAP & EXTRAORDINARY FEATURES (v2.0)
+## 🚦 3. MASTER PRIORITIZED ROADMAP (v2.0)
 
-### 📌 Tier 1: Engineering Core, Security & Quality (High Priority)
-1. **Codebase Cleanup & De-bloat**: Remove unused dependencies listed above to optimize Render build speed and decrease Vercel bundle size.
-2. **Zod Input Validation**: Add Zod schema validation middleware to all HTTP endpoints to enforce strict data contracts.
-3. **Automated Testing Suite**: Implement API unit & integration tests using Jest and Supertest (target 80%+ endpoint coverage).
-4. **Model Naming Cleanup**: Rename typos (`UserMOdel` → `UserModel`, `notification.modal.ts` → `notification.model.ts`).
-5. **Centralized Error Middleware & Winston Logging**: Replace fragmented `console.log` statements with structured JSON logging.
+```
+ ┌──────────────────────────────────────────────────────────────┐
+ │ ✅ Phase 1: Security Hardening & Core Bug Fixes              │ (COMPLETED)
+ └────────────────────────────┬─────────────────────────────────┘
+                              │
+ ┌────────────────────────────▼─────────────────────────────────┐
+ │ Phase 2: Data Integrity, Zod Validation & Jest Test Suite    │ (Data & Quality)
+ └────────────────────────────┬─────────────────────────────────┘
+                              │
+ ┌────────────────────────────▼─────────────────────────────────┐
+ │ Phase 3: UI/UX Modernization & Multi-Theme Engine            │ (Visual Polish)
+ └────────────────────────────┬─────────────────────────────────┘
+                              │
+ ┌────────────────────────────▼─────────────────────────────────┐
+ │ Phase 4: WebRTC Call Reliability & Infrastructure Hardening  │ (Network & Infra)
+ └────────────────────────────┬─────────────────────────────────┘
+                              │
+ ┌────────────────────────────▼─────────────────────────────────┐
+ │ Phase 5: Groq AI Smart Features & Group Chat Scaling         │ (Product Expansion)
+ └──────────────────────────────────────────────────────────────┘
+```
 
-### 📌 Tier 2: Real-Time Performance & Infrastructure Boost
-6. **Redis Caching & Pub/Sub Adapter**: Integrate Redis for online user presence caching and Socket.io Redis Adapter for horizontal backend scaling.
-7. **TURN Server Integration**: Add TURN relay credentials (e.g., via Metered.ca / Twilio) to guarantee 99.9% WebRTC call connection success rates on strict mobile 4G/5G networks.
-8. **Render Keep-Alive Endpoint**: Create an automated heartbeat ping mechanism to prevent Render free-tier cold starts (~30s delay after inactivity).
-9. **Web Push Notifications**: Web Push API (Service Worker + VAPID) to deliver call/message alerts when browser tab is closed.
+### 📌 Phase 2: Data Integrity, Zod Validation & Jest API Test Suite (Quality Priority)
+1. **Zod Validation Middleware**: Enforce strict data contract schemas for Register, Login, Reset Password, and Messaging endpoints.
+2. **Centralized Error Handler & Winston Logging**: Replace fragmented `console.error` logs with structured JSON logging and a global Express error middleware.
+3. **Fix Model Export Typos & Add Indexes**: Rename `UserMOdel` → `UserModel`, `MessageModal` → `MessageModel`, `notification.modal.ts` → `notification.model.ts` (project-wide find & replace). Add compound index `{ senderId: 1, receiverId: 1, createdAt: -1 }`.
+4. **Jest + Supertest Integration Test Suite**: Write 15+ automated API tests covering auth, token refresh, message sending, and socket authorization.
 
-### 📌 Tier 3: Supercharged AI Features (Groq Llama 3.3 70B)
-10. **AI Smart Reply Chips**: Use Groq to generate 3 context-aware quick response suggestions under incoming messages.
-11. **In-Chat AI Assistant (`@chitchat`)**: Allow users to tag `@chitchat` in any conversation for instant answers, code generation, and translation via Groq.
-12. **Unread Message Summarizer**: A "Catch Me Up" button in active group chats to summarize unread messages into concise bullet points using Groq.
+### 📌 Phase 3: UI/UX Modernization & Multi-Theme Engine (Visual Priority)
+5. **Theme Provider Engine (`ThemeContext.tsx`)**: Multi-theme switcher supporting `'light' | 'dark' | 'cyberpunk' | 'system'` synced with `localStorage`, Tailwind `.dark` class, AND Mantine `forceColorScheme` (so Mantine UI components switch themes smoothly alongside Tailwind).
+6. **Semantic Class Refactoring**: Refactor hardcoded dark classes across `ChatWindow`, `Sidebar`, `MessageBubble`, and `ChatHeader` to dual-theme semantic classes (`bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100`).
+7. **Complete Settings Page Build ([SettingsPage.tsx](file:///c:/Users/ASUS/Desktop/Project/Chat_app/frontend/src/pages/SettingsPage.tsx))**: Build interactive theme picker card grid, wallpaper customizer, profile editing, and notification controls.
+8. **Bubble Hover Actions & Floating Glass Dock**: Add floating glass navbar and message bubble hover action bar (Quick Reactions, Reply Quote, Copy, Delete).
+9. **Auth Guard `<CallWindow />` & Type-safe Contexts**: Wrap `<CallWindow />` so call UI only loads for authenticated users, and define strict TypeScript interfaces for `CallContext` and `AuthContext`.
 
-### 📌 Tier 4: Product & Social Extensions
-13. **Group Chat Support**: Multi-participant `Chat` model, group roles (Admin, Moderator, Member), group invite links (`chitchatt.tech/join/:code`).
-14. **Screen Sharing & Video Background Effects**: Tab/window sharing and virtual background blur during WebRTC video calls.
-15. **24-Hour Stories / Status Updates**: Instagram/WhatsApp-like media updates stored in Cloudinary that auto-expire after 24 hours.
-16. **End-to-End Encryption (E2EE)**: Client-side AES-GCM encryption for private 1-on-1 messaging threads.
-17. **Message Pinning & Full-Text Search**: Pin key messages to the header and search message history via MongoDB Atlas Search.
+### 📌 Phase 4: WebRTC Call Reliability & Infrastructure Hardening
+10. **TURN Server Relay Integration**: Configure WebRTC ICE servers with TURN relay credentials (e.g. Metered.ca / Twilio) to guarantee **99.9% audio/video call connection success** across strict mobile 4G/5G networks.
+11. **Self-Host Audio Assets**: Move ringtone/dialtone audio files from external `mixkit.co` CDN to local `/public/audio/` assets.
+12. **Render Cold-Start Keep-Alive**: Enhance `/api/health` in [health.controller.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/health.controller.ts) and configure UptimeRobot ping monitor to keep Render backend warm 24/7.
+13. **Web Push Notifications (VAPID / Service Worker)**: Deliver push alerts for incoming calls and unread messages when browser tab is closed.
+14. **Graceful Shutdown Handler**: Add `SIGTERM` handler in `index.ts` for clean WebSocket disconnect and MongoDB close on server restarts.
+
+### 📌 Phase 5: Groq AI Smart Features & Group Chat Scaling
+15. **AI Smart Reply Chips**: Use Groq (`llama-3.3-70b-versatile`) to generate 3 context-aware reply chips above the text input.
+16. **In-Chat `@chitchat` Assistant**: Tag `@chitchat` in any 1-on-1 or group chat for instant AI answers, coding help, or translation.
+17. **Group Chat Engine**: Multi-participant `Chat` model with admin roles, member controls, and shareable invite URLs (`chitchatt.tech/join/:code`).
+18. **Cursor-Based Message Pagination**: Replace `skip()`-based pagination with `createdAt` cursor pagination for optimal performance at 50,000+ messages.
+19. **Redis Caching & Socket Pub/Sub Adapter**: Replace in-memory JS Maps (`onlineUsers`, `ongoingCalls`) in [socket.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/socket.ts) with Redis for horizontal scaling on AWS EC2 or Render.

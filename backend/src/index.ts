@@ -23,8 +23,10 @@ async function startServer() {
 
     const allowedOrigins = [
       process.env.FRONTEND_URL?.replace(/\/$/, ""),
+      "https://chitchatt.tech",
       "http://localhost:5173",
-    ].filter(Boolean);
+      "http://localhost:3000",
+    ].filter(Boolean) as string[];
 
     const io = new Server(server, {
       transports: ["polling", "websocket"],
@@ -32,7 +34,10 @@ async function startServer() {
         origin: (origin, callback) => {
           if (!origin) return callback(null, true);
           const cleanOrigin = origin.replace(/\/$/, "");
-          if (allowedOrigins.includes(cleanOrigin) || origin.endsWith(".vercel.app")) {
+          if (
+            allowedOrigins.includes(cleanOrigin) ||
+            cleanOrigin.includes("chitchat")
+          ) {
             return callback(null, true);
           }
           return callback(new Error("CORS Policy Violation"));
@@ -52,5 +57,13 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+process.on("unhandledRejection", (reason) => {
+  console.error("⚠️ Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("💥 Uncaught Exception:", error);
+});
 
 startServer();

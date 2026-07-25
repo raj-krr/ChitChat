@@ -57,12 +57,10 @@ export const chatPermissionMiddleware = async (
       (id: Types.ObjectId) => id.toString() === senderId
     );
     if (receiverBlockedSender) {
-      if (receiverBlockedSender) {
-        return res.status(403).json({
-          success: false,
-          msg: "You are blocked by this user",
-        });
-      }
+      return res.status(403).json({
+        success: false,
+        msg: "You are blocked by this user",
+      });
     }
 
     const isFriend = sender.friends.some(

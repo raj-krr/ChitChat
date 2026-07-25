@@ -11,8 +11,8 @@ router.get("/chats", authMiddleware, getChatList);
 router.get("/chat/:id", authMiddleware,chatPermissionMiddleware, getMessages);
 router.post("/chat/read/:id", authMiddleware,chatPermissionMiddleware, markMessagesAsRead);
 router.post("/send/:id",  messageLimiter,authMiddleware, chatPermissionMiddleware, upload.single("file"), sendMessages);
-router.delete("/chat/:messageId", authMiddleware, chatPermissionMiddleware, clearChat);
+router.delete("/chat/:id", authMiddleware, chatPermissionMiddleware, clearChat);
 router.delete("/:messageId", authMiddleware, deleteMessageForEveryone);
-router.delete("/me/:messageId", authMiddleware, deleteMessageForMe)
-router.post("/:messageId/react", reactToMessage);
+router.delete("/me/:messageId", authMiddleware, deleteMessageForMe);
+router.post("/:messageId/react", authMiddleware, reactToMessage);
 export default router;
