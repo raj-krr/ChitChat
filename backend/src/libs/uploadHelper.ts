@@ -1,13 +1,8 @@
-import { s3 } from "./s3";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
-import path from "path";
 
 /**
- * Uploads media file trying AWS S3 first.
- * If AWS S3 fails (credits exhausted, invalid keys, etc.),
- * it seamlessly falls back to Cloudinary.
+ * Uploads media file to Cloudinary storage.
+ * Supports auto-detection for images, videos, audio, and documents.
  */
 export async function uploadMediaFile({
   filePath,
@@ -20,33 +15,6 @@ export async function uploadMediaFile({
   mimeType: string;
   folder?: string;
 }): Promise<string> {
-  // 1. Try AWS S3 first
-  if (
-    process.env.AWS_ACCESS_KEY_ID &&
-    process.env.AWS_SECRET_ACCESS_KEY &&
-    process.env.AWS_BUCKET_NAME
-  ) {
-    try {
-      const fileContent = fs.readFileSync(filePath);
-      const fileExt = path.extname(fileName);
-      const fileKey = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}${fileExt}`;
-
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: fileKey,
-          Body: fileContent,
-          ContentType: mimeType,
-        })
-      );
-
-      return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION || "ap-south-1"}.amazonaws.com/${fileKey}`;
-    } catch {
-      // AWS S3 failed/exhausted, fall through to Cloudinary
-    }
-  }
-
-  // 2. Fallback to Cloudinary
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
   const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
   const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
@@ -66,10 +34,11 @@ export async function uploadMediaFile({
       });
 
       return uploadRes.secure_url;
-    } catch {
-      // Cloudinary failed
+    } catch (err: any) {
+      console.error("⚠️ Cloudinary upload error:", err?.message || err);
+      throw new Error(`Cloudinary upload failed: ${err?.message || err}`);
     }
   }
 
-  throw new Error("Failed to upload media file");
+  throw new Error("Cloudinary configuration missing in environment variables");
 }
