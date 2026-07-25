@@ -2,9 +2,6 @@ import { Request, Response } from "express";
 import UserMOdel from "../../models/user.model";
 import MessageModal from "../../models/message.model";
 import fs from "fs";
-import path from "path";
-import { s3 } from "../../libs/s3";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { Types } from "mongoose";
 import { onlineUsers } from "../../socket";
 import { getIO } from "../../socketEmitter";
@@ -18,7 +15,7 @@ import { getDefaultAnimeAvatar } from "../../utils/constants";
 
 type PopulatedReplyTo = {
   _id: Types.ObjectId;
-   clientId?: string; 
+  clientId?: string;
   text?: string;
   senderId: {
     _id: Types.ObjectId;
@@ -169,31 +166,31 @@ export const getMessages = async (req: Request, res: Response) => {
       .limit(limit)
       .populate("senderId", "username avatar")
       .populate({
-  path: "replyTo",
-  select: "text senderId",
-  populate: {
-    path: "senderId",
-    select: "username",
-  },
-})
+        path: "replyTo",
+        select: "text senderId",
+        populate: {
+          path: "senderId",
+          select: "username",
+        },
+      })
 
     const normalizedMessages = messages.reverse().map((m: any) => ({
-  ...m.toObject(),
-  replyTo: m.replyTo
-    ? {
-        _id: m.replyTo._id,
-      text: m.replyTo.text,
-        clientId: m.replyTo.clientId,
-        senderId: m.replyTo.senderId._id,
-        senderName: m.replyTo.senderId.username,
-      }
-    : null,
-}));
+      ...m.toObject(),
+      replyTo: m.replyTo
+        ? {
+          _id: m.replyTo._id,
+          text: m.replyTo.text,
+          clientId: m.replyTo.clientId,
+          senderId: m.replyTo.senderId._id,
+          senderName: m.replyTo.senderId.username,
+        }
+        : null,
+    }));
 
-return res.status(200).json({
-  success: true,
-  messages: normalizedMessages,
-});
+    return res.status(200).json({
+      success: true,
+      messages: normalizedMessages,
+    });
   } catch {
     return res.status(500).json({ success: false });
   }
@@ -202,43 +199,43 @@ return res.status(200).json({
 export const sendMessages = async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
-    const { clientId  } = req.body;
+    const { clientId } = req.body;
     const { sender, receiver } = req.chatUsers!;
-   const replyTo =
-  typeof req.body.replyTo === "string"
-    ? req.body.replyTo
-    : undefined;
+    const replyTo =
+      typeof req.body.replyTo === "string"
+        ? req.body.replyTo
+        : undefined;
 
     const chatId = getChatId(
-  sender._id.toString(),
-  receiver._id.toString()
-);
+      sender._id.toString(),
+      receiver._id.toString()
+    );
 
-const allowedMimesTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/svg+xml",
-  "video/mp4",
-  "video/mpeg",
-  "video/quicktime",
-  "video/x-matroska",
+    const allowedMimesTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/svg+xml",
+      "video/mp4",
+      "video/mpeg",
+      "video/quicktime",
+      "video/x-matroska",
 
-  // documents
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      // documents
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
-  // 🎤 ADD AUDIO
-  "audio/webm",
-  "audio/mpeg",
-  "audio/mp3",
-  "audio/wav",
-  "audio/ogg"
-];
+      // 🎤 ADD AUDIO
+      "audio/webm",
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/wav",
+      "audio/ogg"
+    ];
 
     let fileUrl: string | undefined;
 
@@ -278,45 +275,45 @@ const allowedMimesTypes = [
     }
 
     const message = await new MessageModal({
-       chatId,
-  senderId: sender._id,
-  receiverId: receiver._id,
-  text,
+      chatId,
+      senderId: sender._id,
+      receiverId: receiver._id,
+      text,
       file: fileUrl,
-   mimeType: req.file ? req.file.mimetype : undefined, 
+      mimeType: req.file ? req.file.mimetype : undefined,
       clientId,
-  status: "sent",
-  ...(replyTo && { replyTo: new Types.ObjectId(replyTo) }),
-}).save();
+      status: "sent",
+      ...(replyTo && { replyTo: new Types.ObjectId(replyTo) }),
+    }).save();
 
-const populatedMessage = await MessageModal.findOne({
-  _id: message._id,
-})
-  .populate({
-  path: "replyTo",
-  select: "text senderId",
-  populate: {
-    path: "senderId",
-    select: "username",
-  },
-})
-  .lean<IMessage & { replyTo?: PopulatedReplyTo | null }>();
-    
+    const populatedMessage = await MessageModal.findOne({
+      _id: message._id,
+    })
+      .populate({
+        path: "replyTo",
+        select: "text senderId",
+        populate: {
+          path: "senderId",
+          select: "username",
+        },
+      })
+      .lean<IMessage & { replyTo?: PopulatedReplyTo | null }>();
+
     if (!populatedMessage) {
-  return res.status(500).json({ success: false });
-}
-   const msg = {
-  ...populatedMessage,
-  replyTo: populatedMessage.replyTo
-    ? {
-        _id: populatedMessage.replyTo._id,
-      text: populatedMessage.replyTo.text,
-        clientId: populatedMessage.replyTo.clientId, 
-        senderId: populatedMessage.replyTo.senderId._id,
-        senderName: populatedMessage.replyTo.senderId.username,
-      }
-    : null,
-};
+      return res.status(500).json({ success: false });
+    }
+    const msg = {
+      ...populatedMessage,
+      replyTo: populatedMessage.replyTo
+        ? {
+          _id: populatedMessage.replyTo._id,
+          text: populatedMessage.replyTo.text,
+          clientId: populatedMessage.replyTo.clientId,
+          senderId: populatedMessage.replyTo.senderId._id,
+          senderName: populatedMessage.replyTo.senderId.username,
+        }
+        : null,
+    };
 
     const receiverIdStr = receiver._id.toString();
     const senderIdStr = sender._id.toString();
@@ -324,39 +321,39 @@ const populatedMessage = await MessageModal.findOne({
     const receiverSocketId = onlineUsers.get(receiverIdStr);
     const io = getIO();
 
-       const senderSocketId = onlineUsers.get(senderIdStr);
-      if (senderSocketId) {
-  io.to(senderSocketId).emit("new-message", {
-    message: msg,
-  });
-}
+    const senderSocketId = onlineUsers.get(senderIdStr);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("new-message", {
+        message: msg,
+      });
+    }
     if (receiverSocketId) {
-  io.to(receiverSocketId).emit("new-message", {
-    message: {
-      ...msg,
-      clientId,
-    },
-  });
+      io.to(receiverSocketId).emit("new-message", {
+        message: {
+          ...msg,
+          clientId,
+        },
+      });
 
-  io.to(receiverSocketId).emit("unread-update", {
-    from: senderIdStr,
-  });
+      io.to(receiverSocketId).emit("unread-update", {
+        from: senderIdStr,
+      });
     }
     if (receiver.isBot) {
-  handleAIBotReply({
-    chatId: chatId.toString(),
-    userMessage: text || "",
-    userId: sender._id.toString(),
-  });
-}
+      handleAIBotReply({
+        chatId: chatId.toString(),
+        userMessage: text || "",
+        userId: sender._id.toString(),
+      });
+    }
 
-return res.status(200).json({
-  success: true,
-  message: {
-    ...msg,
-    clientId,
-  },
-});
+    return res.status(200).json({
+      success: true,
+      message: {
+        ...msg,
+        clientId,
+      },
+    });
 
   } catch (error) {
     return res.status(500).json({
@@ -488,7 +485,7 @@ export const deleteMessageForMe = async (req: Request, res: Response) => {
     return res.status(500).json({ msg: "Server error" });
   }
 };
-export const reactToMessage = async (req:Request, res:Response) => {
+export const reactToMessage = async (req: Request, res: Response) => {
   try {
     const { emoji } = req.body;
     const userId = req.user?.userId;
