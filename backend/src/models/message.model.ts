@@ -77,10 +77,11 @@ status: {
 },
 
 
-}, { timestamps: true },
+}, { timestamps: true });
 
-);
+messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 
-const MessageModal = mongoose.model<IMessage>("Message", messageSchema);
+const MessageModel = mongoose.model<IMessage>("Message", messageSchema);
+export const MessageModal = MessageModel;
 
-export default MessageModal;
+export default MessageModel;

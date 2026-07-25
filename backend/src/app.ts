@@ -13,6 +13,8 @@ import friendRoute from "./routes/friendRoute";
 import { healthCheck } from "./controllers/health.controller";
 import notificationRoutes from "./routes/notificationRoute";
 import { globalLimiter } from "./middlewares/rateLimiter";
+import { errorHandler } from "./middlewares/errorHandler.middleware";
+
 const app: Application = express();
 
 app.set("trust proxy", 1);
@@ -39,5 +41,8 @@ app.use("/api/me", meRoutes);
 app.use("/api/message", messageRoute);
 app.use("/api/friends", friendRoute);
 app.use("/api/notifications", notificationRoutes);
+
+// Centralized error handler middleware
+app.use(errorHandler);
 
 export default app;

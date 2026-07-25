@@ -47,7 +47,7 @@
 
 ---
 
-## 🧹 2. COMPLETED CODEBASE CLEANUP & SECURITY FIXES (Phase 1 Completed ✅)
+## 🧹 2. COMPLETED CODEBASE CLEANUP, SECURITY FIXES & VALIDATION (Phases 1 & 2 Completed ✅)
 
 | Service | Category | Action Taken | Reason & Impact | Status |
 | :--- | :--- | :--- | :--- | :--- |
@@ -56,9 +56,10 @@
 | **Backend** | Security | OTP expiration calculation in [auth.controllers.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/user/auth.controllers.ts) | Changed password reset OTP expiry from 5 hours to 5 minutes (`Date.now() + 5 * 60 * 1000`). | ✅ **Fixed** |
 | **Backend** | Security | Hardened Socket CORS in [index.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/index.ts) | Replaced `.vercel.app` wildcard with exact production domain whitelist. | ✅ **Fixed** |
 | **Backend** | Stability | Process crash listeners in [index.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/index.ts) | Added `unhandledRejection` and `uncaughtException` process handlers. | ✅ **Fixed** |
-| **Backend** | Clean Code | Removed `punycode` import in [auth.middleware.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/middlewares/auth.middleware.ts) | Removed dead import of deprecated Node module. | ✅ **Fixed** |
-| **Backend** | Clean Code | Removed `console.error` import in [auth.controllers.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/user/auth.controllers.ts) | Removed unused import. | ✅ **Fixed** |
-| **Backend** | Clean Code | Simplified block check in [chatPermission.middleware.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/middlewares/chatPermission.middleware.ts) | Collapsed duplicate nested `if (receiverBlockedSender)` block. | ✅ **Fixed** |
+| **Backend** | Input Validation | Created [validate.middleware.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/middlewares/validate.middleware.ts) & Schemas | Enforced request body, query, and param validation across auth & message routes. | ✅ **Completed** |
+| **Backend** | Error Handling | Created Centralized [errorHandler.middleware.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/middlewares/errorHandler.middleware.ts) | Registered global error handler in [app.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/app.ts) handling database, JWT, and 500 errors. | ✅ **Completed** |
+| **Backend** | Data Models | Mongoose Models & Compound Index | Exported `UserModel`, `MessageModel` with compound index `{ senderId: 1, receiverId: 1, createdAt: -1 }`, and created `notification.model.ts`. | ✅ **Completed** |
+| **Backend** | Testing | Created Automated Jest Suite | Configured [jest.config.js](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/jest.config.js), [auth.test.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/__tests__/auth.test.ts), and [message.test.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/__tests__/message.test.ts). | ✅ **Completed** |
 
 ---
 
@@ -70,7 +71,7 @@
  └────────────────────────────┬─────────────────────────────────┘
                               │
  ┌────────────────────────────▼─────────────────────────────────┐
- │ Phase 2: Data Integrity, Zod Validation & Jest Test Suite    │ (Data & Quality)
+ │ ✅ Phase 2: Data Integrity, Zod Validation & Jest Test Suite │ (COMPLETED)
  └────────────────────────────┬─────────────────────────────────┘
                               │
  ┌────────────────────────────▼─────────────────────────────────┐
@@ -86,29 +87,23 @@
  └──────────────────────────────────────────────────────────────┘
 ```
 
-### 📌 Phase 2: Data Integrity, Zod Validation & Jest API Test Suite (Quality Priority)
-1. **Zod Validation Middleware**: Enforce strict data contract schemas for Register, Login, Reset Password, and Messaging endpoints.
-2. **Centralized Error Handler & Winston Logging**: Replace fragmented `console.error` logs with structured JSON logging and a global Express error middleware.
-3. **Fix Model Export Typos & Add Indexes**: Rename `UserMOdel` → `UserModel`, `MessageModal` → `MessageModel`, `notification.modal.ts` → `notification.model.ts` (project-wide find & replace). Add compound index `{ senderId: 1, receiverId: 1, createdAt: -1 }`.
-4. **Jest + Supertest Integration Test Suite**: Write 15+ automated API tests covering auth, token refresh, message sending, and socket authorization.
-
 ### 📌 Phase 3: UI/UX Modernization & Multi-Theme Engine (Visual Priority)
-5. **Theme Provider Engine (`ThemeContext.tsx`)**: Multi-theme switcher supporting `'light' | 'dark' | 'cyberpunk' | 'system'` synced with `localStorage`, Tailwind `.dark` class, AND Mantine `forceColorScheme` (so Mantine UI components switch themes smoothly alongside Tailwind).
-6. **Semantic Class Refactoring**: Refactor hardcoded dark classes across `ChatWindow`, `Sidebar`, `MessageBubble`, and `ChatHeader` to dual-theme semantic classes (`bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100`).
-7. **Complete Settings Page Build ([SettingsPage.tsx](file:///c:/Users/ASUS/Desktop/Project/Chat_app/frontend/src/pages/SettingsPage.tsx))**: Build interactive theme picker card grid, wallpaper customizer, profile editing, and notification controls.
-8. **Bubble Hover Actions & Floating Glass Dock**: Add floating glass navbar and message bubble hover action bar (Quick Reactions, Reply Quote, Copy, Delete).
-9. **Auth Guard `<CallWindow />` & Type-safe Contexts**: Wrap `<CallWindow />` so call UI only loads for authenticated users, and define strict TypeScript interfaces for `CallContext` and `AuthContext`.
+1. **Theme Provider Engine (`ThemeContext.tsx`)**: Multi-theme switcher supporting `'light' | 'dark' | 'cyberpunk' | 'system'` synced with `localStorage`, Tailwind `.dark` class, AND Mantine `forceColorScheme` (so Mantine UI components switch themes smoothly alongside Tailwind).
+2. **Semantic Class Refactoring**: Refactor hardcoded dark classes across `ChatWindow`, `Sidebar`, `MessageBubble`, and `ChatHeader` to dual-theme semantic classes (`bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100`).
+3. **Complete Settings Page Build ([SettingsPage.tsx](file:///c:/Users/ASUS/Desktop/Project/Chat_app/frontend/src/pages/SettingsPage.tsx))**: Build interactive theme picker card grid, wallpaper customizer, profile editing, and notification controls.
+4. **Bubble Hover Actions & Floating Glass Dock**: Add floating glass navbar and message bubble hover action bar (Quick Reactions, Reply Quote, Copy, Delete).
+5. **Auth Guard `<CallWindow />` & Type-safe Contexts**: Wrap `<CallWindow />` so call UI only loads for authenticated users, and define strict TypeScript interfaces for `CallContext` and `AuthContext`.
 
 ### 📌 Phase 4: WebRTC Call Reliability & Infrastructure Hardening
-10. **TURN Server Relay Integration**: Configure WebRTC ICE servers with TURN relay credentials (e.g. Metered.ca / Twilio) to guarantee **99.9% audio/video call connection success** across strict mobile 4G/5G networks.
-11. **Self-Host Audio Assets**: Move ringtone/dialtone audio files from external `mixkit.co` CDN to local `/public/audio/` assets.
-12. **Render Cold-Start Keep-Alive**: Enhance `/api/health` in [health.controller.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/health.controller.ts) and configure UptimeRobot ping monitor to keep Render backend warm 24/7.
-13. **Web Push Notifications (VAPID / Service Worker)**: Deliver push alerts for incoming calls and unread messages when browser tab is closed.
-14. **Graceful Shutdown Handler**: Add `SIGTERM` handler in `index.ts` for clean WebSocket disconnect and MongoDB close on server restarts.
+6. **TURN Server Relay Integration**: Configure WebRTC ICE servers with TURN relay credentials (e.g. Metered.ca / Twilio) to guarantee **99.9% audio/video call connection success** across strict mobile 4G/5G networks.
+7. **Self-Host Audio Assets**: Move ringtone/dialtone audio files from external `mixkit.co` CDN to local `/public/audio/` assets.
+8. **Render Cold-Start Keep-Alive**: Enhance `/api/health` in [health.controller.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/controllers/health.controller.ts) and configure UptimeRobot ping monitor to keep Render backend warm 24/7.
+9. **Web Push Notifications (VAPID / Service Worker)**: Deliver push alerts for incoming calls and unread messages when browser tab is closed.
+10. **Graceful Shutdown Handler**: Add `SIGTERM` handler in `index.ts` for clean WebSocket disconnect and MongoDB close on server restarts.
 
 ### 📌 Phase 5: Groq AI Smart Features & Group Chat Scaling
-15. **AI Smart Reply Chips**: Use Groq (`llama-3.3-70b-versatile`) to generate 3 context-aware reply chips above the text input.
-16. **In-Chat `@chitchat` Assistant**: Tag `@chitchat` in any 1-on-1 or group chat for instant AI answers, coding help, or translation.
-17. **Group Chat Engine**: Multi-participant `Chat` model with admin roles, member controls, and shareable invite URLs (`chitchatt.tech/join/:code`).
-18. **Cursor-Based Message Pagination**: Replace `skip()`-based pagination with `createdAt` cursor pagination for optimal performance at 50,000+ messages.
-19. **Redis Caching & Socket Pub/Sub Adapter**: Replace in-memory JS Maps (`onlineUsers`, `ongoingCalls`) in [socket.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/socket.ts) with Redis for horizontal scaling on AWS EC2 or Render.
+11. **AI Smart Reply Chips**: Use Groq (`llama-3.3-70b-versatile`) to generate 3 context-aware reply chips above the text input.
+12. **In-Chat `@chitchat` Assistant**: Tag `@chitchat` in any 1-on-1 or group chat for instant AI answers, coding help, or translation.
+13. **Group Chat Engine**: Multi-participant `Chat` model with admin roles, member controls, and shareable invite URLs (`chitchatt.tech/join/:code`).
+14. **Cursor-Based Message Pagination**: Replace `skip()`-based pagination with `createdAt` cursor pagination for optimal performance at 50,000+ messages.
+15. **Redis Caching & Socket Pub/Sub Adapter**: Replace in-memory JS Maps (`onlineUsers`, `ongoingCalls`) in [socket.ts](file:///c:/Users/ASUS/Desktop/Project/Chat_app/backend/src/socket.ts) with Redis for horizontal scaling on AWS EC2 or Render.
