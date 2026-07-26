@@ -21,14 +21,12 @@ export function PresenceProvider({ children }: any) {
       setOnlineUsers((prev) => {
         const next = new Set(prev);
         next.add(idStr);
-        console.log("🟢 ONLINE USERS AFTER USER-ONLINE:", Array.from(next));
         return next;
       });
     };
 
     const onOnlineUsers = (users: any[]) => {
       const stringifiedUsers = (users || []).map((u) => String(u));
-      console.log("🟢 ONLINE USERS LIST RECEIVED:", stringifiedUsers);
       setOnlineUsers(new Set(stringifiedUsers));
     };
 

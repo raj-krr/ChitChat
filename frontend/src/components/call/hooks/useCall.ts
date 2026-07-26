@@ -51,11 +51,17 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
   // Ensure video refs stay bound to streams on render
   useEffect(() => {
-    if (localStreamRef.current && localVideoRef.current && !localVideoRef.current.srcObject) {
-      localVideoRef.current.srcObject = localStreamRef.current;
+    if (localStreamRef.current && localVideoRef.current) {
+      if (localVideoRef.current.srcObject !== localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
+      localVideoRef.current.play().catch(() => {});
     }
-    if (remoteStreamRef.current && remoteVideoRef.current && !remoteVideoRef.current.srcObject) {
-      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    if (remoteStreamRef.current && remoteVideoRef.current) {
+      if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      }
+      remoteVideoRef.current.play().catch(() => {});
     }
   });
 

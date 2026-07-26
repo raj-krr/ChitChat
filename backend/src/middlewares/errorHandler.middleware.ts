@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import fs from "fs";
 
 /**
  * Centralized Express Error Handling Middleware.
@@ -11,6 +12,15 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   console.error("🔥 Global Error Handler Caught:", err?.stack || err?.message || err);
+
+  // Clean up temporary upload file if request failed
+  if (req.file?.path && fs.existsSync(req.file.path)) {
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (cleanupErr) {
+      console.error("Failed to delete temporary upload file:", cleanupErr);
+    }
+  }
 
   // Mongoose validation error
   if (err?.name === "ValidationError") {
