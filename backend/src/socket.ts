@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
+import UserMOdel from "./models/user.model";
 
 export const onlineUsers = new Map<string, string>();
 const userSockets = new Map<string, Set<string>>();
@@ -72,7 +73,7 @@ export function initSocket(io: Server) {
       }
     });
 
-    socket.on("call-user", ({ to, offer, user, type }) => {
+    socket.on("call-user", async ({ to, offer, user, type }) => {
       if (!to || !offer) return;
 
       const targetId = String(to);
@@ -94,10 +95,15 @@ export function initSocket(io: Server) {
       ongoingCalls.set(userId, targetId);
       ongoingCalls.set(targetId, userId);
 
+      let callerUser = null;
+      try {
+        callerUser = await UserMOdel.findById(userId).select("_id username avatar fullName email gender").lean();
+      } catch (err) {}
+
       io.to(targetId).emit("incoming-call", {
         from: userId,
         offer,
-        user,
+        user: callerUser || user,
         type: type || "audio",
       });
     });
