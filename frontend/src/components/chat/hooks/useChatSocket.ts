@@ -28,132 +28,132 @@ export function useChatSocket({
     return () => { socket.off("message-deleted", onDeleted) };
   }, [setMessages]);
 
-  /* -------- NEW MESSAGE ( FIXED) -------- */
+  /* -------- NEW MESSAGE (FIXED) -------- */
   useEffect(() => {
-  const onNewMessage = ({ message }: any) => {
-    const senderId =
-    typeof message.senderId === "object"
-      ? message.senderId._id
-      : message.senderId;
+    const onNewMessage = ({ message }: any) => {
+      const rawSenderId =
+        typeof message.senderId === "object" && message.senderId !== null
+          ? message.senderId._id
+          : message.senderId;
 
-  const receiverId =
-    typeof message.receiverId === "object"
-      ? message.receiverId._id
-        : message.receiverId;
-    
-    const isMine = String(senderId) === String(userId);
-  const isCurrentChat =
-    (senderId === userId && receiverId === chatId) ||
-      (senderId === chatId && receiverId === userId);
-    
-    if (!isCurrentChat) return;
+      const rawReceiverId =
+        typeof message.receiverId === "object" && message.receiverId !== null
+          ? message.receiverId._id
+          : message.receiverId;
 
+      const senderIdStr = String(rawSenderId || "");
+      const receiverIdStr = String(rawReceiverId || "");
+      const userIdStr = String(userId || "");
+      const chatIdStr = String(chatId || "");
 
-    const normalizedMessage = {
-      ...message,
-      status: isMine ? "sent" : undefined,
-  replyTo: message.replyTo
-    ? {
-        _id: message.replyTo._id,
-        text: message.replyTo.text,
-        senderId:
-          typeof message.replyTo.senderId === "object"
-            ? message.replyTo.senderId._id
-            : message.replyTo.senderId,
-      }
-    : null,
-};
+      const isMine = senderIdStr === userIdStr;
+      const isCurrentChat =
+        (senderIdStr === userIdStr && receiverIdStr === chatIdStr) ||
+        (senderIdStr === chatIdStr && receiverIdStr === userIdStr);
 
-  setMessages((prev: any[]) => {
-  if (isMine && message.clientId) {
-    const idx = prev.findIndex(
-      m => m.clientId === message.clientId
-    );
+      if (!isCurrentChat) return;
 
-    if (idx !== -1) {
-      const copy = [...prev];
-      copy[idx] = {
-        ...prev[idx],
-        ...normalizedMessage,
-        status: "sent",
-        isTemp: false,
+      const normalizedMessage = {
+        ...message,
+        status: isMine ? "sent" : undefined,
+        replyTo: message.replyTo
+          ? {
+              _id: String(message.replyTo._id),
+              text: message.replyTo.text,
+              senderId:
+                typeof message.replyTo.senderId === "object"
+                  ? String(message.replyTo.senderId._id)
+                  : String(message.replyTo.senderId),
+            }
+          : null,
       };
-      return copy;
-    }
 
-    return prev;
-  }
+      setMessages((prev: any[]) => {
+        if (isMine && message.clientId) {
+          const idx = prev.findIndex((m) => m.clientId === message.clientId);
 
-  if (!isMine) {
-    const exists = prev.some(
-      m => m._id && m._id === message._id
-    );
+          if (idx !== -1) {
+            const copy = [...prev];
+            copy[idx] = {
+              ...prev[idx],
+              ...normalizedMessage,
+              status: "sent",
+              isTemp: false,
+            };
+            return copy;
+          }
 
-    if (exists) return prev;
+          return prev;
+        }
 
-    return [...prev, normalizedMessage];
-  }
+        if (!isMine) {
+          const exists = prev.some(
+            (m) => m._id && String(m._id) === String(message._id)
+          );
 
-  return prev;
-});
+          if (exists) return prev;
 
-    // AUTO SCROLL (but don't fight reply jump)
-if (
-  shouldAutoScrollRef.current &&
-  !message.replyTo
-) {
-  requestAnimationFrame(() =>
-    endRef.current?.scrollIntoView({ behavior: "smooth" })
-  );
-} else if (!shouldAutoScrollRef.current) {
-  setShowNewMsgBtn(true);
-}
+          return [...prev, normalizedMessage];
+        }
 
-  };
+        return prev;
+      });
 
-  socket.on("new-message", onNewMessage);
-    return () => { socket.off("new-message", onNewMessage) };
-}, [chatId, userId, setMessages]);
+      // AUTO SCROLL (but don't fight reply jump)
+      if (shouldAutoScrollRef.current && !message.replyTo) {
+        requestAnimationFrame(() =>
+          endRef.current?.scrollIntoView({ behavior: "smooth" })
+        );
+      } else if (!shouldAutoScrollRef.current) {
+        setShowNewMsgBtn(true);
+      }
+    };
+
+    socket.on("new-message", onNewMessage);
+    return () => {
+      socket.off("new-message", onNewMessage);
+    };
+  }, [chatId, userId, setMessages]);
 
   /* -------- MESSAGE REACTION -------- */
-useEffect(() => {
-  const onMessageReaction = ({ messageId, reactions }: any) => {
-    setMessages((prev: any[]) =>
-      prev.map(m =>
-        m._id === messageId
-          ? { ...m, reactions }
-          : m
-      )
-    );
-  };
+  useEffect(() => {
+    const onMessageReaction = ({ messageId, reactions }: any) => {
+      setMessages((prev: any[]) =>
+        prev.map((m) =>
+          String(m._id) === String(messageId) ? { ...m, reactions } : m
+        )
+      );
+    };
 
-  socket.on("message-reaction", onMessageReaction);
+    socket.on("message-reaction", onMessageReaction);
 
-  return () => {
-    socket.off("message-reaction", onMessageReaction);
-  };
-}, [setMessages]);
-  
+    return () => {
+      socket.off("message-reaction", onMessageReaction);
+    };
+  }, [setMessages]);
+
   /* -------- TYPING -------- */
   useEffect(() => {
     const onTyping = ({ from }: any) => {
-      if (from === chatId) {
+      if (String(from) === String(chatId)) {
         setIsTyping(true);
         setTimeout(() => setIsTyping(false), 1200);
       }
     };
 
     socket.on("typing", onTyping);
-    return () => { socket.off("typing", onTyping) };
+    return () => {
+      socket.off("typing", onTyping);
+    };
   }, [chatId]);
 
   /* -------- READ RECEIPT -------- */
   useEffect(() => {
     const onMessagesRead = ({ by }: any) => {
-      if (by === chatId) {
+      if (String(by) === String(chatId)) {
         setMessages((prev: any[]) =>
-          prev.map(m =>
-            m.senderId === userId
+          prev.map((m) =>
+            String(m.senderId) === String(userId)
               ? { ...m, isRead: true }
               : m
           )
@@ -162,8 +162,9 @@ useEffect(() => {
     };
 
     socket.on("messages-read", onMessagesRead);
-    return () => {socket.off("messages-read", onMessagesRead)
-  };
+    return () => {
+      socket.off("messages-read", onMessagesRead);
+    };
   }, [chatId, userId, setMessages]);
 
   const markRead = async () => {
