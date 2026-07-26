@@ -50,8 +50,6 @@ const extractId = (val: any): string => {
       const isMine = Boolean(userIdStr && senderIdStr === userIdStr);
       const isCurrentChat = Boolean(chatIdStr && (senderIdStr === chatIdStr || receiverIdStr === chatIdStr));
 
-      console.log("📩 CLIENT RECEIVED new-message:", message, "isCurrentChat:", isCurrentChat, "sender:", senderIdStr, "receiver:", receiverIdStr, "chatId:", chatIdStr);
-
       if (!isCurrentChat) return;
 
       const normalizedMessage = {

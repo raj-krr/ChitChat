@@ -268,6 +268,9 @@ export const sendMessages = async (req: Request, res: Response) => {
     }
 
     if (!text && !fileUrl) {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        try { fs.unlinkSync(req.file.path); } catch {}
+      }
       return res.status(400).json({
         success: false,
         msg: "Message must contain text or file",
@@ -318,8 +321,6 @@ export const sendMessages = async (req: Request, res: Response) => {
     const receiverIdStr = receiver._id.toString();
     const senderIdStr = sender._id.toString();
     const io = getIO();
-
-    console.log("📡 SERVER EMITTING new-message to sender room:", senderIdStr, "and receiver room:", receiverIdStr, "msgId:", message._id);
 
     io.to(senderIdStr).emit("new-message", {
       message: msg,

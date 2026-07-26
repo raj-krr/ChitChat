@@ -371,20 +371,21 @@ function ActiveCallWindow({
         } : { display: "none" }}
       />
 
-      {/* Local PiP */}
+      {/* Local PiP (Self Video) */}
       <video
         ref={localVideoRef} autoPlay muted playsInline
         style={isVideo ? {
           position: "absolute",
           bottom: "calc(env(safe-area-inset-bottom,0px) + 100px)",
           right: 14,
-          width: "clamp(90px,14vw,148px)",
-          height: "clamp(126px,19vw,208px)",
+          width: "clamp(100px,16vw,160px)",
+          height: "clamp(140px,22vw,220px)",
           objectFit: "cover",
-          borderRadius: 12,
-          border: "2px solid rgba(255,255,255,.18)",
-          zIndex: 2,
-          boxShadow: "0 4px 24px rgba(0,0,0,.6)",
+          borderRadius: 14,
+          border: "2px solid rgba(255,255,255,.3)",
+          zIndex: 10,
+          transform: "scaleX(-1)",
+          boxShadow: "0 8px 32px rgba(0,0,0,.7)",
         } : { display: "none" }}
       />
 
