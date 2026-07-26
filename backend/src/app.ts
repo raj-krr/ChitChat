@@ -17,10 +17,28 @@ import { errorHandler } from "./middlewares/errorHandler.middleware";
 
 const app: Application = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL?.replace(/\/$/, ""),
+  "https://chitchatt.tech",
+  "https://chitchat.tech",
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean) as string[];
+
 app.set("trust proxy", 1);
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, "");
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.includes("chitchat")
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -28,7 +46,6 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
-app.use(globalLimiter);
 
 app.get("/api/health", healthCheck);
 
