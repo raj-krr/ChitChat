@@ -238,6 +238,16 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
       socket.emit("answer-call", { to: from, answer: peer.localDescription });
 
+      if (remoteVideoRef.current && remoteStreamRef.current) {
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        remoteVideoRef.current.play().catch(() => {});
+      }
+
+      if (localVideoRef.current && localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+        localVideoRef.current.play().catch(() => {});
+      }
+
       if (remoteAudioRef.current && remoteStreamRef.current) {
         remoteAudioRef.current.srcObject = remoteStreamRef.current;
         remoteAudioRef.current.muted = false;
@@ -265,7 +275,17 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       }
       pendingIceCandidatesRef.current = [];
 
-      // Ensure caller's remote audio element plays
+      // Ensure caller's remote video & audio elements play
+      if (remoteVideoRef.current && remoteStreamRef.current) {
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        remoteVideoRef.current.play().catch(() => {});
+      }
+
+      if (localVideoRef.current && localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+        localVideoRef.current.play().catch(() => {});
+      }
+
       if (remoteAudioRef.current && remoteStreamRef.current) {
         remoteAudioRef.current.srcObject = remoteStreamRef.current;
         remoteAudioRef.current.muted = false;
