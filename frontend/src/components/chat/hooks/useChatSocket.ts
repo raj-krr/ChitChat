@@ -44,13 +44,11 @@ const extractId = (val: any): string => {
 
       const senderIdStr = extractId(message.senderId);
       const receiverIdStr = extractId(message.receiverId);
-      const userIdStr = String(userId || "");
-      const chatIdStr = String(chatId || "");
+      const userIdStr = extractId(userId);
+      const chatIdStr = extractId(chatId);
 
-      const isMine = senderIdStr === userIdStr;
-      const isCurrentChat =
-        (senderIdStr === userIdStr && receiverIdStr === chatIdStr) ||
-        (senderIdStr === chatIdStr && receiverIdStr === userIdStr);
+      const isMine = Boolean(userIdStr && senderIdStr === userIdStr);
+      const isCurrentChat = Boolean(chatIdStr && (senderIdStr === chatIdStr || receiverIdStr === chatIdStr));
 
       if (!isCurrentChat) return;
 
@@ -133,7 +131,7 @@ const extractId = (val: any): string => {
   /* -------- TYPING -------- */
   useEffect(() => {
     const onTyping = ({ from }: any) => {
-      if (String(from) === String(chatId)) {
+      if (extractId(from) === extractId(chatId)) {
         setIsTyping(true);
         setTimeout(() => setIsTyping(false), 1200);
       }
@@ -148,10 +146,10 @@ const extractId = (val: any): string => {
   /* -------- READ RECEIPT -------- */
   useEffect(() => {
     const onMessagesRead = ({ by }: any) => {
-      if (String(by) === String(chatId)) {
+      if (extractId(by) === extractId(chatId)) {
         setMessages((prev: any[]) =>
           prev.map((m) =>
-            String(m.senderId) === String(userId)
+            extractId(m.senderId) === extractId(userId)
               ? { ...m, isRead: true }
               : m
           )
