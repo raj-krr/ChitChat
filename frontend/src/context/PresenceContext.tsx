@@ -16,28 +16,31 @@ export function PresenceProvider({ children }: any) {
   const [lastSeen, setLastSeen] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const onUserOnline = (userId: string) => {
+    const onUserOnline = (userId: any) => {
+      const idStr = String(userId);
       setOnlineUsers((prev) => {
         const next = new Set(prev);
-        next.add(userId);
+        next.add(idStr);
         return next;
       });
     };
 
-    const onOnlineUsers = (users: string[]) => {
-      setOnlineUsers(new Set(users));
+    const onOnlineUsers = (users: any[]) => {
+      const stringifiedUsers = (users || []).map((u) => String(u));
+      setOnlineUsers(new Set(stringifiedUsers));
     };
 
-    const onUserOffline = ({ userId, lastSeen }: any) => {
+    const onUserOffline = ({ userId: offlineUserId, lastSeen: ls }: any) => {
+      const idStr = String(offlineUserId);
       setOnlineUsers((prev) => {
         const next = new Set(prev);
-        next.delete(userId);
+        next.delete(idStr);
         return next;
       });
 
       setLastSeen((prev) => ({
         ...prev,
-        [userId]: lastSeen,
+        [idStr]: ls,
       }));
     };
 
