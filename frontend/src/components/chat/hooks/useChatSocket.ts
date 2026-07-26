@@ -17,7 +17,7 @@ export function useChatSocket({
     const onDeleted = ({ messageId }: any) => {
       setMessages((prev: any[]) =>
         prev.map(m =>
-          m._id === messageId
+          String(m._id) === String(messageId)
             ? { ...m, isDeleted: true }
             : m
         )
@@ -28,21 +28,22 @@ export function useChatSocket({
     return () => { socket.off("message-deleted", onDeleted) };
   }, [setMessages]);
 
+const extractId = (val: any): string => {
+  if (!val) return "";
+  if (typeof val === "object") {
+    if (val._id) return String(val._id);
+    return String(val);
+  }
+  return String(val);
+};
+
   /* -------- NEW MESSAGE (FIXED) -------- */
   useEffect(() => {
     const onNewMessage = ({ message }: any) => {
-      const rawSenderId =
-        typeof message.senderId === "object" && message.senderId !== null
-          ? message.senderId._id
-          : message.senderId;
+      if (!message) return;
 
-      const rawReceiverId =
-        typeof message.receiverId === "object" && message.receiverId !== null
-          ? message.receiverId._id
-          : message.receiverId;
-
-      const senderIdStr = String(rawSenderId || "");
-      const receiverIdStr = String(rawReceiverId || "");
+      const senderIdStr = extractId(message.senderId);
+      const receiverIdStr = extractId(message.receiverId);
       const userIdStr = String(userId || "");
       const chatIdStr = String(chatId || "");
 
@@ -60,10 +61,7 @@ export function useChatSocket({
           ? {
               _id: String(message.replyTo._id),
               text: message.replyTo.text,
-              senderId:
-                typeof message.replyTo.senderId === "object"
-                  ? String(message.replyTo.senderId._id)
-                  : String(message.replyTo.senderId),
+              senderId: extractId(message.replyTo.senderId),
             }
           : null,
       };
