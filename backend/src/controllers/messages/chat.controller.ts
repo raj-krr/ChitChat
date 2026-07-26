@@ -319,6 +319,8 @@ export const sendMessages = async (req: Request, res: Response) => {
     const senderIdStr = sender._id.toString();
     const io = getIO();
 
+    console.log("📡 SERVER EMITTING new-message to sender room:", senderIdStr, "and receiver room:", receiverIdStr, "msgId:", message._id);
+
     io.to(senderIdStr).emit("new-message", {
       message: msg,
     });

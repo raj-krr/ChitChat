@@ -14,6 +14,7 @@ export const globalLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  validate: false,
   keyGenerator: (req) => {
     return req.body.email || req.ip;
   },
@@ -25,7 +26,11 @@ export const authLimiter = rateLimit({
 
 export const messageLimiter = rateLimit({
   windowMs: 10 * 1000, // 10 seconds
-  max: 30, // max 20 messages per 10 seconds
+  max: 60, // max 60 messages per 10 seconds per user
+  validate: false,
+  keyGenerator: (req: any) => {
+    return req.user?.userId || req.headers["x-forwarded-for"] || req.ip;
+  },
   message: {
     success: false,
     msg: "You're sending messages too fast."

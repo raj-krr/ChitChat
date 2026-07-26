@@ -23,8 +23,8 @@ router.get("/chat/:id", authMiddleware, chatPermissionMiddleware, getMessages);
 router.post("/chat/read/:id", authMiddleware, chatPermissionMiddleware, markMessagesAsRead);
 router.post(
   "/send/:id",
-  messageLimiter,
   authMiddleware,
+  messageLimiter,
   validate(sendMessageSchema),
   chatPermissionMiddleware,
   upload.single("file"),

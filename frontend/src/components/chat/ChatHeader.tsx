@@ -5,7 +5,8 @@ import { useGlobalCall } from "../../context/CallContext";
 export default function ChatHeader({ user, onBack }: any) {
   const { onlineUsers, lastSeen } = usePresence();
   const callSocket = useGlobalCall();
-  const isOnline = onlineUsers.has(user._id);
+  const userIdStr = String(user?._id || user?.id || "");
+  const isOnline = Boolean(userIdStr && onlineUsers.has(userIdStr));
 
   return (
     <div className="z-20 flex items-center gap-3 px-4 py-3 bg-white/10 backdrop-blur-xl border-b border-white/20">
@@ -37,8 +38,8 @@ export default function ChatHeader({ user, onBack }: any) {
             ? "🤖 AI Assistant"
             : isOnline
             ? "online"
-            : lastSeen[user._id]
-            ? `last seen ${new Date(lastSeen[user._id]).toLocaleTimeString()}`
+            : lastSeen[userIdStr]
+            ? `last seen ${new Date(lastSeen[userIdStr]).toLocaleTimeString()}`
             : "offline"}
         </span>
       </div>

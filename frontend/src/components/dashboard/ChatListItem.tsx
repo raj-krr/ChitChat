@@ -18,9 +18,10 @@ export default function ChatListItem({
   onClick,
 }: Props) {
 
-   if (!user || !user._id) return null;
+   if (!user || (!user._id && !user.id)) return null;
   const { onlineUsers } = usePresence();
-  const isOnline = onlineUsers.has(user._id);
+  const userIdStr = String(user._id || user.id);
+  const isOnline = Boolean(userIdStr && onlineUsers.has(userIdStr));
 
   const peek = useProfilePeek();
 

@@ -2,7 +2,8 @@ import { usePresence } from "../../context/PresenceContext";
 
 export default function ProfilePeek({ user, pos, onClose }: any) {
   const { onlineUsers } = usePresence();
-  const isOnline = onlineUsers.has(user._id);
+  const userIdStr = String(user?._id || user?.id || "");
+  const isOnline = Boolean(userIdStr && onlineUsers.has(userIdStr));
 
   return (
     <>
