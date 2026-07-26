@@ -45,7 +45,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     refreshAuth();
 
     const onFocus = () => {
-      if (!socket.connected && socket.auth?.userId) {
+      const currentAuth = socket.auth as Record<string, any> | undefined;
+      if (!socket.connected && currentAuth?.userId) {
         socket.connect();
       }
     };
