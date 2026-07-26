@@ -142,6 +142,42 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     });
   };
 
+  // Helper for HD media capture with active noise suppression
+  const getHDMediaStream = async (type: "audio" | "video") => {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+        sampleRate: 48000,
+        channelCount: 1,
+      },
+      video: type === "video" ? {
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 720, max: 1080 },
+        frameRate: { ideal: 30, max: 60 },
+        facingMode: "user",
+      } : false,
+    });
+  };
+
+  // Helper to optimize WebRTC video bitrate for crisp HD quality
+  const optimizeVideoBitrate = (peer: RTCPeerConnection) => {
+    try {
+      peer.getSenders().forEach((sender) => {
+        if (sender.track?.kind === "video") {
+          const params = sender.getParameters();
+          if (!params.encodings || params.encodings.length === 0) {
+            params.encodings = [{}];
+          }
+          params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps HD bitrate
+          params.encodings[0].maxFramerate = 30;
+          sender.setParameters(params).catch(() => {});
+        }
+      });
+    } catch {}
+  };
+
   // START CALL (Caller side)
   const startCall = async (to: string, user: any, type: "audio" | "video" = "audio") => {
     if (peerRef.current) {
@@ -153,14 +189,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     isSpeakerMutedRef.current = false;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: type === "video",
-      });
+      const stream = await getHDMediaStream(type);
 
       localStreamRef.current = stream;
       setActiveCallUserId(to);
@@ -175,6 +204,8 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       for (const track of stream.getTracks()) {
         peer.addTrack(track, stream);
       }
+
+      optimizeVideoBitrate(peer);
 
       await peer.setLocalDescription(await peer.createOffer());
       await waitForIceGathering(peer);
@@ -200,14 +231,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     isSpeakerMutedRef.current = false;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: type === "video",
-      });
+      const stream = await getHDMediaStream(type as "audio" | "video");
 
       localStreamRef.current = stream;
       setActiveCallUserId(from);
@@ -222,6 +246,8 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       for (const track of stream.getTracks()) {
         peer.addTrack(track, stream);
       }
+
+      optimizeVideoBitrate(peer);
 
       await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
