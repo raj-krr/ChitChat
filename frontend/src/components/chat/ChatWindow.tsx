@@ -29,6 +29,7 @@ const formatDateLabel = (date: string) => {
 export default function ChatWindow({ chat, onBack }: any) {
   const { user } = useAuth();
   const [replyTo, setReplyTo] = useState<any>(null);
+  const [showCopyToast, setShowCopyToast] = useState(false);
 
 const callSocket = useGlobalCall();
   
@@ -42,6 +43,21 @@ const callSocket = useGlobalCall();
     endRef,
     shouldAutoScrollRef,
   } = useChatMessages(chat._id);
+
+  useEffect(() => {
+    let timer: any;
+    const handleCopyToast = () => {
+      setShowCopyToast(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setShowCopyToast(false), 2000);
+    };
+
+    window.addEventListener("show-copy-toast", handleCopyToast);
+    return () => {
+      window.removeEventListener("show-copy-toast", handleCopyToast);
+      clearTimeout(timer);
+    };
+  }, []);
 
   const { showNewMsgBtn, setShowNewMsgBtn, isTyping, markRead } = useChatSocket(
     {
@@ -146,6 +162,13 @@ const scrollToMessage = async (messageId: string) => {
 
   return (
     <div className="flex w-full flex-col h-full min-h-0 relative">
+      {/* WHATSAPP STYLE TOP-MIDDLE COPIED TOAST */}
+      {showCopyToast && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-1.5 rounded-full bg-slate-900/90 text-white border border-white/20 text-xs font-medium shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+          Message copied
+        </div>
+      )}
+
     <ChatHeader
   user={{
     ...chat,

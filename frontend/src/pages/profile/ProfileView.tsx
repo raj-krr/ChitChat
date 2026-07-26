@@ -1,4 +1,6 @@
 import { TextInput, Textarea, Select, Button } from "@mantine/core";
+import { useTheme } from "../../context/ThemeContext";
+import { Moon, Sun, Zap } from "lucide-react";
 
 const today = new Date();
 
@@ -32,6 +34,7 @@ export function ProfileView({
   saveChanges,
   logout,
 }: any) {
+  const { theme, setTheme } = useTheme();
   if (!profile) return null;
 
   return (
@@ -156,6 +159,40 @@ export function ProfileView({
             setProfile({ ...profile, bio: e.target.value })
           }
         />
+
+        {/* APPEARANCE THEMES (EXACTLY 3 THEMES) */}
+        <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
+          <label className="text-sm font-medium text-white">Appearance Theme</label>
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              { key: "dark", label: "Dark", icon: <Moon size={15} />, bg: "bg-slate-900/90 border-slate-700 text-white" },
+              { key: "light", label: "Light", icon: <Sun size={15} />, bg: "bg-sky-100 text-slate-900 border-sky-300 font-semibold" },
+              { key: "cyberpunk", label: "Cyber", icon: <Zap size={15} />, bg: "bg-purple-950/90 text-pink-300 border-cyan-400" },
+            ].map((item) => {
+              const active = theme === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setTheme(item.key as any)}
+                  className={`
+                    relative p-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all duration-200 text-xs
+                    ${item.bg}
+                    ${active ? "ring-2 ring-indigo-400 scale-[1.03] shadow-md font-bold" : "opacity-75 hover:opacity-100"}
+                  `}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                  {active && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px] font-bold">
+                      ✓
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <Button
           type="button"

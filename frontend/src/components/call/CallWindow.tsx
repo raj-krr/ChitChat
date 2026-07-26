@@ -389,10 +389,10 @@ function ActiveCallWindow({
       {/* Top Header Bar */}
       <HeaderOverlay remoteName={remoteName} remoteAvatar={remoteAvatar} isConnected={isConnected} isVideo={isVideo} fmt={fmt} seconds={seconds} />
 
-      {/* Remote Video Stream — Full Fill */}
+      {/* Remote Video Stream — Full Fill (Only visible when connected) */}
       <video
         ref={remoteVideoRef} autoPlay playsInline
-        style={isVideo ? {
+        style={isVideo && isConnected ? {
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
           objectFit: "cover", zIndex: 0,
@@ -433,7 +433,7 @@ function ActiveCallWindow({
         />
       </div>
 
-      {/* Center Audio / Ambient Area */}
+      {/* Center Audio / Ambient Ringing Area */}
       <div style={{
         flex: 1,
         display: "flex",
@@ -443,10 +443,10 @@ function ActiveCallWindow({
         position: "relative",
         zIndex: 1,
         overflow: "hidden",
-        paddingTop: isVideo ? 0 : "clamp(20px, 4vh, 40px)",
+        paddingTop: isVideo && isConnected ? 0 : "clamp(20px, 4vh, 40px)",
       }}>
-        {/* Glowing Radial Mesh Orbs for Audio Call */}
-        {!isVideo && (
+        {/* Ringing / Audio Call UI Layout (Shown for voice calls OR video calls until answered) */}
+        {(!isVideo || !isConnected) && (
           <>
             <div style={{
               position: "absolute", top: "-15%", left: "50%",
@@ -466,10 +466,10 @@ function ActiveCallWindow({
           </>
         )}
 
-        {/* Audio Call UI Layout */}
-        {!isVideo && (
+        {/* Audio / Video Ringing Call UI Layout */}
+        {(!isVideo || !isConnected) && (
           <div className="cw-anim-fade-up" style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
+            display: "flex", flexDirection: "column", alignItems: "center", zIndex: 10,
           }}>
             {/* Avatar with pulse rings */}
             <div style={{ position: "relative", marginBottom: 24 }}>

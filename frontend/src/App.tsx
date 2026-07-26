@@ -15,6 +15,8 @@ import NotificationsPage from "./pages/NotificationsPage";
 import PublicRoute from "./routes/PublicRoute";
 import CallWindow from "./components/call/CallWindow";
 
+import SettingsPage from "./pages/SettingsPage";
+
 function App() {
 
   return (
@@ -29,6 +31,7 @@ function App() {
 
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
       <Route
         path="/dashboard"
