@@ -43,6 +43,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     refreshAuth();
+
+    const onFocus = () => {
+      const currentAuth = socket.auth as Record<string, any> | undefined;
+      if (!socket.connected && currentAuth?.userId) {
+        socket.connect();
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
   const logout = async () => {

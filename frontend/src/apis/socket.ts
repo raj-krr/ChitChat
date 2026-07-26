@@ -1,7 +1,9 @@
 import { io } from "socket.io-client";
 
 const socketUrl =
-  import.meta.env.VITE_API_SOCKET_URL || "https://chitchat-7hbs.onrender.com";
+  import.meta.env.VITE_API_SOCKET_URL ||
+  import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+  "https://api.chitchatt.tech";
 
 export const socket = io(socketUrl, {
   withCredentials: true,

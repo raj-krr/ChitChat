@@ -135,13 +135,20 @@ const extractId = (val: any): string => {
     const onTyping = ({ from }: any) => {
       if (extractId(from) === extractId(chatId)) {
         setIsTyping(true);
-        setTimeout(() => setIsTyping(false), 1200);
+      }
+    };
+
+    const onStopTyping = ({ from }: any) => {
+      if (extractId(from) === extractId(chatId)) {
+        setIsTyping(false);
       }
     };
 
     socket.on("typing", onTyping);
+    socket.on("stop-typing", onStopTyping);
     return () => {
       socket.off("typing", onTyping);
+      socket.off("stop-typing", onStopTyping);
     };
   }, [chatId]);
 
