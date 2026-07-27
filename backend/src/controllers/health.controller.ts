@@ -11,14 +11,21 @@ export const healthCheck = async (_req: Request, res: Response) => {
     3: "disconnecting",
   };
 
+  const memoryUsage = process.memoryUsage();
+
   const status = {
     server: "ok",
-    uptime: process.uptime(),
+    uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
-
+    pid: process.pid,
+    memory: {
+      rssMB: Math.round(memoryUsage.rss / 1024 / 1024),
+      heapTotalMB: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+      heapUsedMB: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+    },
     database: {
-      status: states[mongoState],
+      status: states[mongoState] || "unknown",
       readyState: mongoState,
     },
   };
@@ -26,14 +33,15 @@ export const healthCheck = async (_req: Request, res: Response) => {
   if (mongoState !== 1) {
     return res.status(503).json({
       success: false,
-      msg: "Service unhealthy",
+      msg: "Service degraded — database disconnected",
       ...status,
     });
   }
 
   return res.status(200).json({
     success: true,
-    msg: "Service healthy",
+    msg: "ChitChat Service Healthy",
     ...status,
   });
 };
+

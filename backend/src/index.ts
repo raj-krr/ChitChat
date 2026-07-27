@@ -9,6 +9,7 @@ import { Server } from "socket.io";
 import { initSocket } from "./socket";
 import { setIO } from "./socketEmitter";
 import mongoDb from "./libs/db";
+import mongoose from "mongoose";
 
 const port = parseInt(process.env.PORT || "5000", 10);
 
@@ -52,6 +53,44 @@ async function startServer() {
     server.listen(port, () => {
       console.log(`🚀 Server running on port ${port}`);
     });
+
+    // Graceful Shutdown Logic
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+
+      // Stop receiving new HTTP requests
+      server.close(async () => {
+        console.log("🔒 HTTP Server closed.");
+
+        // Disconnect all socket connections
+        try {
+          io.close();
+          console.log("🔌 Socket.io connections closed.");
+        } catch (err) {
+          console.error("Error closing Socket.io:", err);
+        }
+
+        // Close MongoDB connection
+        try {
+          await mongoose.connection.close();
+          console.log("🍃 MongoDB connection closed.");
+        } catch (err) {
+          console.error("Error closing MongoDB connection:", err);
+        }
+
+        console.log("👋 Graceful shutdown complete. Exiting.");
+        process.exit(0);
+      });
+
+      // Force exit after 10 seconds if graceful shutdown hangs
+      setTimeout(() => {
+        console.error("⚠️ Forced shutdown after 10s timeout.");
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   } catch (err) {
     console.error("❌ Server failed to start", err);
     process.exit(1);
@@ -67,3 +106,4 @@ process.on("uncaughtException", (error) => {
 });
 
 startServer();
+

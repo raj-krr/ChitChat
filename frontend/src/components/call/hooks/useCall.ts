@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { socket } from "../../../apis/socket";
-import { useGlobalCall } from "../../../context/CallContext";
+import { useGlobalCall, getIceServers } from "../../../context/CallContext";
 
 export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef: any) {
   const peerRef = useRef<RTCPeerConnection | null>(null);
@@ -67,21 +67,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
 
   // CREATE PEER
   const createPeer = (remoteId: string) => {
-    const peer = new RTCPeerConnection({
-      iceServers: [
-        { urls: ["stun:stun.l.google.com:19302"] },
-        {
-          urls: [
-            "turn:global.relay.metered.ca:80",
-            "turn:global.relay.metered.ca:80?transport=tcp",
-            "turn:global.relay.metered.ca:443",
-            "turns:global.relay.metered.ca:443?transport=tcp",
-          ],
-          username: "02d63ed20c3a50f2efc67dc5",
-          credential: "vcVLobIoZOjeg5L9",
-        },
-      ],
-    });
+    const peer = new RTCPeerConnection(getIceServers());
 
     peer.onicecandidate = (e) => {
       if (e.candidate) {
