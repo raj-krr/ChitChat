@@ -364,6 +364,8 @@ export default function CallWindow() {
               onFlip={() => call.switchCamera()}
               remoteVideoRef={remoteVideoRef}
               localVideoRef={localVideoRef}
+              localStream={call.localStream}
+              remoteStream={call.remoteStream}
             />
           </>
         )}
@@ -380,7 +382,28 @@ function ActiveCallWindow({
   seconds, fmt, isMuted, isSpeakerMuted,
   onMute, onSpeaker, onEnd, onFlip,
   remoteVideoRef, localVideoRef,
+  localStream, remoteStream,
 }: any) {
+
+  // Auto-bind local video stream on mount and when localStream state updates
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      if (localVideoRef.current.srcObject !== localStream) {
+        localVideoRef.current.srcObject = localStream;
+      }
+      localVideoRef.current.play().catch(() => {});
+    }
+  }, [localVideoRef, localStream, isConnected, isVideo]);
+
+  // Auto-bind remote video stream on mount and when remoteStream state updates
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      if (remoteVideoRef.current.srcObject !== remoteStream) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+      remoteVideoRef.current.play().catch(() => {});
+    }
+  }, [remoteVideoRef, remoteStream, isConnected, isVideo]);
   return (
     <div
       className={`cw-window cw-anim-scale-in${isVideo ? " is-video" : ""}`}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { socket } from "../../../apis/socket";
 import { useGlobalCall, getIceServers } from "../../../context/CallContext";
 
@@ -6,6 +6,9 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
+
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
   const { setActiveCallUserId, activeCallUserId } = useGlobalCall();
   const callSocket = useGlobalCall();
@@ -76,12 +79,15 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     };
 
     peer.ontrack = (event) => {
+      console.log("📹 WebRTC ontrack event:", event.track.kind, event.streams);
       const stream = event.streams[0] || remoteStreamRef.current || new MediaStream();
-      remoteStreamRef.current = stream;
-
+      
       if (event.track && !stream.getTracks().includes(event.track)) {
         stream.addTrack(event.track);
       }
+
+      remoteStreamRef.current = stream;
+      setRemoteStream(stream);
 
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
@@ -128,23 +134,31 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     });
   };
 
-  // Helper for HD media capture with active noise suppression
+  // Helper for HD media capture with active noise suppression and fallback
   const getHDMediaStream = async (type: "audio" | "video") => {
-    return await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: { ideal: true },
-        noiseSuppression: { ideal: true },
-        autoGainControl: { ideal: true },
-        sampleRate: 48000,
-        channelCount: 1,
-      },
-      video: type === "video" ? {
-        width: { ideal: 1280, max: 1920 },
-        height: { ideal: 720, max: 1080 },
-        frameRate: { ideal: 30, max: 60 },
-        facingMode: "user",
-      } : false,
-    });
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+          sampleRate: 48000,
+          channelCount: 1,
+        },
+        video: type === "video" ? {
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 60 },
+          facingMode: "user",
+        } : false,
+      });
+    } catch (e) {
+      console.warn("⚠️ HD video constraints failed, falling back to basic constraints:", e);
+      return await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === "video" ? true : false,
+      });
+    }
   };
 
   // Helper to optimize WebRTC video bitrate for crisp HD quality
@@ -178,6 +192,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       const stream = await getHDMediaStream(type);
 
       localStreamRef.current = stream;
+      setLocalStream(stream);
       setActiveCallUserId(to);
 
       if (localVideoRef.current) {
@@ -220,6 +235,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
       const stream = await getHDMediaStream(type as "audio" | "video");
 
       localStreamRef.current = stream;
+      setLocalStream(stream);
       setActiveCallUserId(from);
 
       if (localVideoRef.current) {
@@ -348,6 +364,9 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
 
     remoteStreamRef.current = null;
+    localStreamRef.current = null;
+    setLocalStream(null);
+    setRemoteStream(null);
     pendingIceCandidatesRef.current = [];
   };
   cleanupRef.current = cleanup;
@@ -407,6 +426,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
         localStreamRef.current.removeTrack(oldVideoTrack);
       }
       localStreamRef.current.addTrack(newVideoTrack);
+      setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
 
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
@@ -439,5 +459,7 @@ export function useCall(remoteVideoRef: any, localVideoRef: any, remoteAudioRef:
     toggleMute,
     switchCamera,
     toggleSpeaker,
+    localStream,
+    remoteStream,
   };
 }
