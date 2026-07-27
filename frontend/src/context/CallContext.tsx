@@ -2,19 +2,39 @@ import {
   createContext, useContext, useEffect, useRef, useState,
 } from "react";
 import { socket } from "../apis/socket";
+import { soundSynth } from "../utils/audioSynth";
+import { useNotifications } from "../hooks/useNotifications";
 
-type CallStatus = "idle" | "calling" | "ringing" | "connected";
+export type CallStatus = "idle" | "calling" | "ringing" | "connected";
 
-const CallContext = createContext<any>(null);
+/**
+ * Returns iceServers configuration (STUN + TURN) for WebRTC PeerConnection
+ */
+export function getIceServers(): RTCConfiguration {
+  const turnUrl = import.meta.env.VITE_TURN_SERVER_URL;
+  const turnUser = import.meta.env.VITE_TURN_USERNAME;
+  const turnPass = import.meta.env.VITE_TURN_CREDENTIAL;
 
-function makeAudio(src: string, loop = true) {
-  const a = new Audio(src);
-  a.loop = loop;
-  return a;
+  const iceServers: RTCIceServer[] = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
+  ];
+
+  if (turnUrl) {
+    iceServers.push({
+      urls: turnUrl,
+      username: turnUser || undefined,
+      credential: turnPass || undefined,
+    });
+  }
+
+  return { iceServers, iceCandidatePoolSize: 10 };
 }
 
-const RINGTONE_SRC  = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
-const DIALTONE_SRC  = "https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3";
+const CallContext = createContext<any>(null);
 
 /* ─── provider ──────────────────────────────────────────────────────────── */
 export const CallProvider = ({ children }: any) => {
@@ -25,36 +45,31 @@ export const CallProvider = ({ children }: any) => {
   const [activeCallUserId,setActiveCallUserId]= useState<string | null>(null);
   const [missedCallMsg,   setMissedCallMsg]   = useState<string | null>(null);
 
+  const { notify } = useNotifications();
+
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef  = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const callStatusRef  = useRef<CallStatus>("idle");
   const timeoutRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ringtoneRef    = useRef<HTMLAudioElement | null>(null);
-  const dialtoneRef    = useRef<HTMLAudioElement | null>(null);
 
   // keep ref in sync
   useEffect(() => { callStatusRef.current = callStatus; }, [callStatus]);
 
   /* ── audio control ───────────────────────────────────────────────────── */
   const stopAllAudio = () => {
-    [ringtoneRef, dialtoneRef].forEach(r => {
-      if (r.current) { r.current.pause(); r.current.currentTime = 0; }
-    });
+    soundSynth.stop();
   };
 
-  // Ringtone — receiver hears this
   const playRingtone = () => {
     stopAllAudio();
-    if (!ringtoneRef.current) ringtoneRef.current = makeAudio(RINGTONE_SRC);
-    ringtoneRef.current.play().catch(() => {});
+    soundSynth.playRingtone();
   };
 
   const playDialtone = () => {
     stopAllAudio();
-    if (!dialtoneRef.current) dialtoneRef.current = makeAudio(DIALTONE_SRC);
-    dialtoneRef.current.play().catch(() => {});
+    soundSynth.playDialtone();
   };
 
   /* ── 30s auto-cutoff ─────────────────────────────────────────────────── */
@@ -85,6 +100,13 @@ export const CallProvider = ({ children }: any) => {
       setCallStatus("ringing");
       setCallType(type);
       playRingtone();
+
+      // Trigger desktop notification if tab is inactive
+      notify({
+        title: `Incoming ${type === "video" ? "📹 Video" : "📞 Audio"} Call`,
+        body: `${user?.username || "Someone"} is calling you on ChitChat...`,
+        tag: "chitchat-call",
+      });
     };
 
     const onRejected = () => {
@@ -125,7 +147,7 @@ export const CallProvider = ({ children }: any) => {
       socket.off("call-missed",    onMissed);
       socket.off("call-busy",      onBusy);
     };
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     if (callStatus === "calling") {
@@ -154,4 +176,4 @@ export const CallProvider = ({ children }: any) => {
   );
 };
 
-export const useGlobalCall = () => useContext(CallContext);
+export const useGlobalCall = () => useContext(CallContext);
