@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getMessagesApi } from "../../../apis/chat.api";
+import { getMessagesApi, getGroupMessagesApi } from "../../../apis/chat.api";
 
 const PAGE_SIZE = 20;
 
@@ -7,11 +7,10 @@ const mergeUniqueMessages = (oldMsgs: any[], newMsgs: any[]) => {
   const map = new Map<string, any>();
 
   [...oldMsgs, ...newMsgs].forEach((msg) => {
-  const key = msg._id || msg.clientId;
-if (key) {
-  map.set(key.toString(), msg);
-}
-
+    const key = msg._id || msg.clientId;
+    if (key) {
+      map.set(key.toString(), msg);
+    }
   });
 
   return Array.from(map.values()).sort(
@@ -21,9 +20,9 @@ if (key) {
   );
 };
 
-export function useChatMessages(chatId: string) {
+export function useChatMessages(chatId: string, isGroup = false) {
   const [messages, setMessages] = useState<any[]>([]);
-  const [skip, setSkip] = useState(0);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -32,58 +31,65 @@ export function useChatMessages(chatId: string) {
   const shouldAutoScrollRef = useRef(true);
 
   const loadMessages = async (reset = false) => {
-    if (loadingMore) return;
+    if (loadingMore || (!hasMore && !reset)) return;
     setLoadingMore(true);
 
-    const res = await getMessagesApi(chatId, {
-      skip: reset ? 0 : skip,
-      limit: PAGE_SIZE,
-    });
+    try {
+      const currentCursor = reset ? undefined : cursor;
+      const res = isGroup
+        ? await getGroupMessagesApi(chatId, { cursor: currentCursor, limit: PAGE_SIZE })
+        : await getMessagesApi(chatId, { cursor: currentCursor, limit: PAGE_SIZE });
 
-    const newMessages = res.data.messages || [];
+      const newMessages = res.data?.messages || [];
+      const nextCursor = res.data?.nextCursor;
+      const hasNext = res.data?.hasNextPage ?? (newMessages.length >= PAGE_SIZE);
 
-    if (reset) {
-      setMessages(newMessages);
-      setSkip(PAGE_SIZE);
-      setHasMore(true);
+      if (reset) {
+        setMessages(newMessages);
+        setCursor(nextCursor);
+        setHasMore(hasNext);
 
-      requestAnimationFrame(() =>
-        endRef.current?.scrollIntoView({ behavior: "auto" })
-      );
+        requestAnimationFrame(() =>
+          endRef.current?.scrollIntoView({ behavior: "auto" })
+        );
 
+        setLoadingMore(false);
+        return;
+      }
+
+      if (newMessages.length === 0) {
+        setHasMore(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      const el = containerRef.current;
+      const prevHeight = el?.scrollHeight || 0;
+
+      setMessages((prev) => mergeUniqueMessages(prev, newMessages));
+      setCursor(nextCursor);
+      setHasMore(hasNext);
+
+      requestAnimationFrame(() => {
+        if (!el) return;
+        el.scrollTop = el.scrollHeight - prevHeight;
+      });
+    } catch (err) {
+      console.error("Error loading chat messages:", err);
+    } finally {
       setLoadingMore(false);
-      return;
     }
-
-    if (newMessages.length === 0) {
-      setHasMore(false);
-      setLoadingMore(false);
-      return;
-    }
-
-    const el = containerRef.current;
-    const prevHeight = el?.scrollHeight || 0;
-
-    setMessages((prev) =>
-      mergeUniqueMessages(prev, newMessages)
-    );
-    setSkip((prev) => prev + PAGE_SIZE);
-
-    requestAnimationFrame(() => {
-      if (!el) return;
-      el.scrollTop = el.scrollHeight - prevHeight;
-    });
-
-    setLoadingMore(false);
   };
 
   useEffect(() => {
     setMessages([]);
-    setSkip(0);
+    setCursor(undefined);
     setHasMore(true);
     shouldAutoScrollRef.current = true;
-    loadMessages(true);
-  }, [chatId]);
+    if (chatId) {
+      loadMessages(true);
+    }
+  }, [chatId, isGroup]);
 
   return {
     messages,

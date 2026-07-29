@@ -1,17 +1,22 @@
 
 import { useState, useRef, useEffect } from "react";
-import { sendMessageApi } from "../../apis/chat.api";
+import { sendMessageApi, sendGroupMessageApi } from "../../apis/chat.api";
 import { socket } from "../../apis/socket";
 import { useAuth } from "../../context/AuthContext";
 import { Paperclip, Send, X, Smile, Mic, Square, Trash2 } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 
+import SmartReplyChips from "./SmartReplyChips";
+
 export default function MessageInput({
   chatId,
   receiverId,
+  groupId,
+  isGroup = false,
   onLocalSend,
   replyTo,
   clearReply,
+  onSendGroup,
 }: any) {
 
   const [text, setText] = useState("");
@@ -33,6 +38,10 @@ export default function MessageInput({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { user } = useAuth();
+
+  const handleSelectChip = (chipText: string) => {
+    setText(chipText);
+  };
 
   useEffect(() => {
     const close = () => setShowEmoji(false);
@@ -222,8 +231,13 @@ export default function MessageInput({
     if (replyTo?._id) form.append("replyTo", replyTo._id);
 
     try {
-      await sendMessageApi(chatId, form);
-      socket.emit("stop-typing", { to: chatId });
+      if (isGroup && groupId) {
+        await sendGroupMessageApi(groupId, form);
+        socket.emit("group-stop-typing", { groupId });
+      } else {
+        await sendMessageApi(chatId, form);
+        socket.emit("stop-typing", { to: chatId });
+      }
       clearReply?.();
     } catch {
       onLocalSend((prev: any[]) =>

@@ -60,6 +60,7 @@ export default function DashboardPage() {
             <div ref={sidebarScrollRef} className="h-full min-h-0">
               <Sidebar
                 onSelectChat={setSelectedChat}
+                onSelectGroup={(grp) => setSelectedChat({ ...grp, isGroup: true })}
                 showFriendsPicker={showFriendsPicker}
                 setShowFriendsPicker={setShowFriendsPicker}
               />

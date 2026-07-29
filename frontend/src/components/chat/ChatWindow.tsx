@@ -31,7 +31,8 @@ export default function ChatWindow({ chat, onBack }: any) {
   const [replyTo, setReplyTo] = useState<any>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
 
-const callSocket = useGlobalCall();
+  const isGroup = Boolean(chat?.members || chat?.isGroup);
+  const callSocket = useGlobalCall();
   
   const {
     messages,
@@ -42,7 +43,7 @@ const callSocket = useGlobalCall();
     containerRef,
     endRef,
     shouldAutoScrollRef,
-  } = useChatMessages(chat._id);
+  } = useChatMessages(chat._id, isGroup);
 
   useEffect(() => {
     let timer: any;
@@ -63,6 +64,7 @@ const callSocket = useGlobalCall();
     {
       chatId: chat._id,
       userId: user?._id,
+      isGroup,
       setMessages,
       shouldAutoScrollRef,
       endRef,
@@ -80,49 +82,44 @@ const callSocket = useGlobalCall();
   }, [chat._id]);
 
   useEffect(() => {
-    if (!messages.length) return;
+    if (!messages.length || isGroup) return;
 
     const lastMsg = messages[messages.length - 1];
 
-    // if last message is from other user → mark as read
     if (lastMsg.senderId !== user?._id) {
       markRead();
     }
-  }, [chat._id]);
+  }, [chat._id, isGroup]);
 
+  const scrollToMessage = async (messageId: string) => {
+    const id = String(messageId);
+    let attempts = 0;
 
-const scrollToMessage = async (messageId: string) => {
-  const id = String(messageId);
+    const tryScroll = async () => {
+      const el = document.querySelector(
+        `[data-msg-id="${id}"]`
+      ) as HTMLElement | null;
 
-  let attempts = 0;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("reply-highlight");
 
-  const tryScroll = async () => {
-    const el = document.querySelector(
-      `[data-msg-id="${id}"]`
-    ) as HTMLElement | null;
+        setTimeout(() => {
+          el.classList.remove("reply-highlight");
+        }, 1200);
 
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("reply-highlight");
+        return;
+      }
 
-      setTimeout(() => {
-        el.classList.remove("reply-highlight");
-      }, 1200);
+      if (hasMore && !loadingMore && attempts < 5) {
+        attempts++;
+        await loadMessages();
+        setTimeout(tryScroll, 120);
+      }
+    };
 
-      return;
-    }
-
-    // Load more messages if not found
-    if (hasMore && !loadingMore && attempts < 5) {
-      attempts++;
-      await loadMessages();
-      setTimeout(tryScroll, 120);
-    }
+    tryScroll();
   };
-
-  tryScroll();
-};
-
 
   const handleScroll = async () => {
     const el = containerRef.current;
@@ -140,7 +137,7 @@ const scrollToMessage = async (messageId: string) => {
     if (atBottom) {
       setShowNewMsgBtn(false);
 
-      if (hasUnreadFromChatUser) {
+      if (hasUnreadFromChatUser && !isGroup) {
         await markRead();
       }
     }
@@ -149,14 +146,14 @@ const scrollToMessage = async (messageId: string) => {
       await loadMessages();
     }
   };
+
   const normalizedMessages = messages.map((m) => ({
     ...m,
-    __key: m._id ? `server-${m._id}` : `client-${m.clientId}`, //  prefix matters
+    __key: m._id ? `server-${m._id}` : `client-${m.clientId}`,
   }));
 
   const visibleMessages = normalizedMessages.filter((m) => {
     if (!m._id) return true;
-
     return !m.deletedFor?.includes(user._id);
   });
 
@@ -169,18 +166,19 @@ const scrollToMessage = async (messageId: string) => {
         </div>
       )}
 
-    <ChatHeader
-  user={{
-    ...chat,
-   onCall: (type:any) => {
-  callSocket.setCallUser(chat);
-  callSocket.setCallType(type);
-  callSocket.setCallStatus("calling");
-}
-     
-  }}
-  onBack={onBack}
-/>
+      <ChatHeader
+        user={{
+          ...chat,
+          onCall: (type: any) => {
+            callSocket.setCallUser(chat);
+            callSocket.setCallType(type);
+            callSocket.setCallStatus("calling");
+          },
+        }}
+        group={isGroup ? chat : undefined}
+        isGroup={isGroup}
+        onBack={onBack}
+      />
 
       <div
         ref={containerRef}
@@ -251,33 +249,38 @@ const scrollToMessage = async (messageId: string) => {
           New messages ↓
         </button>
       )}
-     <div className="
+
+      <div
+        className="
   sticky bottom-2
   px-3
   md:bottom-0 md:px-0
-">
-{isTyping && (
-  <div
-    className="
+"
+      >
+        {isTyping && (
+          <div
+            className="
       absolute -top-4 left-3
       text-[11px] md:text-xs
       text-white
       select-none
       animate-typing-text
     "
-  >
-    typing
-    <span className="typing-dots ml-0.5">
-      <span>.</span>
-      <span>.</span>
-      <span>.</span>
-    </span>
-  </div>
-)}
+          >
+            typing
+            <span className="typing-dots ml-0.5">
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </span>
+          </div>
+        )}
 
         <MessageInput
           chatId={chat._id}
           receiverId={chat._id}
+          groupId={chat._id}
+          isGroup={isGroup}
           onLocalSend={setMessages}
           replyTo={replyTo}
           clearReply={() => setReplyTo(null)}

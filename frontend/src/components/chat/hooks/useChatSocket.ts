@@ -5,6 +5,7 @@ import { axiosInstance } from "../../../apis/axios";
 export function useChatSocket({
   chatId,   // other user's ID
   userId,   // my ID
+  isGroup = false,
   setMessages,
   shouldAutoScrollRef,
   endRef,
@@ -39,6 +40,10 @@ const extractId = (val: any): string => {
 
   /* -------- NEW MESSAGE (FIXED) -------- */
   useEffect(() => {
+    if (isGroup && chatId) {
+      socket.emit("join-group-room", { groupId: chatId });
+    }
+
     const onNewMessage = ({ message }: any) => {
       if (!message) return;
 
@@ -95,7 +100,6 @@ const extractId = (val: any): string => {
         return prev;
       });
 
-      // AUTO SCROLL (but don't fight reply jump)
       if (shouldAutoScrollRef.current && !message.replyTo) {
         requestAnimationFrame(() =>
           endRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -105,11 +109,43 @@ const extractId = (val: any): string => {
       }
     };
 
-    socket.on("new-message", onNewMessage);
-    return () => {
-      socket.off("new-message", onNewMessage);
+    const onNewGroupMessage = ({ groupId, message }: any) => {
+      if (!message || String(groupId) !== String(chatId)) return;
+
+      const senderIdStr = extractId(message.senderId);
+      const userIdStr = extractId(userId);
+      const isMine = Boolean(userIdStr && senderIdStr === userIdStr);
+
+      setMessages((prev: any[]) => {
+        if (isMine && message.clientId) {
+          const idx = prev.findIndex((m) => m.clientId === message.clientId);
+          if (idx !== -1) {
+            const copy = [...prev];
+            copy[idx] = { ...prev[idx], ...message, status: "sent", isTemp: false };
+            return copy;
+          }
+        }
+        const exists = prev.some((m) => m._id && String(m._id) === String(message._id));
+        if (exists) return prev;
+        return [...prev, message];
+      });
+
+      if (shouldAutoScrollRef.current) {
+        requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
+      }
     };
-  }, [chatId, userId, setMessages]);
+
+    socket.on("new-message", onNewMessage);
+    socket.on("new-group-message", onNewGroupMessage);
+
+    return () => {
+      if (isGroup && chatId) {
+        socket.emit("leave-group-room", { groupId: chatId });
+      }
+      socket.off("new-message", onNewMessage);
+      socket.off("new-group-message", onNewGroupMessage);
+    };
+  }, [chatId, userId, isGroup, setMessages]);
 
   /* -------- MESSAGE REACTION -------- */
   useEffect(() => {
