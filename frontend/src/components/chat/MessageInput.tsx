@@ -6,8 +6,6 @@ import { useAuth } from "../../context/AuthContext";
 import { Paperclip, Send, X, Smile, Mic, Square, Trash2 } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 
-import SmartReplyChips from "./SmartReplyChips";
-
 export default function MessageInput({
   chatId,
   receiverId,
@@ -16,7 +14,6 @@ export default function MessageInput({
   onLocalSend,
   replyTo,
   clearReply,
-  onSendGroup,
 }: any) {
 
   const [text, setText] = useState("");
@@ -38,10 +35,6 @@ export default function MessageInput({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { user } = useAuth();
-
-  const handleSelectChip = (chipText: string) => {
-    setText(chipText);
-  };
 
   useEffect(() => {
     const close = () => setShowEmoji(false);

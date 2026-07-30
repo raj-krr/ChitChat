@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link as LinkIcon, X, LogIn, CheckCircle2 } from "lucide-react";
+import { Link as LinkIcon, X } from "lucide-react";
 import { joinGroupViaInviteApi } from "../../apis/chat.api";
 
 interface JoinGroupModalProps {

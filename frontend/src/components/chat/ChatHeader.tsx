@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Phone, Video, Users, Link as LinkIcon, Check, Info } from "lucide-react";
+import { ArrowLeft, Phone, Video, Users, Link as LinkIcon, Check } from "lucide-react";
 import { usePresence } from "../../context/PresenceContext";
 import { useGlobalCall } from "../../context/CallContext";
 import GroupDetailsModal from "./GroupDetailsModal";
