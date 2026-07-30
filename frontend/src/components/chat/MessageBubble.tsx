@@ -224,6 +224,15 @@ function MessageBubble({ msg, onReply, onJump, onDeleteForMe }: any) {
             <span className="italic opacity-60">This message was deleted</span>
           ) : (
             <>
+              {/* SENDER NAME (For incoming messages in groups / chats) */}
+              {!isMe && (
+                <div className="text-[11px] font-bold text-amber-300 dark:text-amber-400 mb-1 leading-tight">
+                  {typeof msg.senderId === "object"
+                    ? msg.senderId.username
+                    : msg.senderName || "Group Member"}
+                </div>
+              )}
+
               {/* REPLY PREVIEW */}
               {msg.replyTo && (
                 <div

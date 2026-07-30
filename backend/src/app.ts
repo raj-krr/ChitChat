@@ -10,6 +10,8 @@ import authRoutes from "./routes/authRoute";
 import meRoutes from "./routes/meRoutes";
 import messageRoute from "./routes/messageRoute";
 import friendRoute from "./routes/friendRoute";
+import groupRoutes from "./routes/group.route";
+import aiRoutes from "./routes/ai.route";
 import { healthCheck } from "./controllers/health.controller";
 import notificationRoutes from "./routes/notificationRoute";
 import { globalLimiter } from "./middlewares/rateLimiter";
@@ -56,6 +58,8 @@ app.get("/api", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/me", meRoutes);
 app.use("/api/message", messageRoute);
+app.use("/api/groups", groupRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/friends", friendRoute);
 app.use("/api/notifications", notificationRoutes);
 

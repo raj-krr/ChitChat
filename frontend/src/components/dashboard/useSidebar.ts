@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { getAllUsersApi } from "../../apis/friend.api";
-import { getChatListApi } from "../../apis/chat.api";
+import { getChatListApi, getMyGroupsApi } from "../../apis/chat.api";
 import { socket } from "../../apis/socket";
 import { getMyFriendsApi } from "../../apis/friend.api";
 
 export function useSidebar() {
   const [chats, setChats] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"chats" | "requests">("chats");
+  const [mode, setMode] = useState<"chats" | "groups" | "requests">("chats");
   const [friends, setFriends] = useState<any[]>([]);
 
   /* -------- INITIAL LOAD -------- */
   useEffect(() => {
     loadChats();
+    loadGroups();
     loadAllUsers();
-      loadFriends();
+    loadFriends();
   }, []);
 
   const loadChats = async () => {
@@ -24,6 +26,15 @@ export function useSidebar() {
       setChats(Array.isArray(res.data?.chats) ? res.data.chats : []);
     } catch {
       setChats([]);
+    }
+  };
+
+  const loadGroups = async () => {
+    try {
+      const res = await getMyGroupsApi();
+      setGroups(Array.isArray(res.data?.groups) ? res.data.groups : []);
+    } catch {
+      setGroups([]);
     }
   };
 
@@ -37,13 +48,13 @@ export function useSidebar() {
   };
 
   const loadFriends = async () => {
-  try {
-    const res = await getMyFriendsApi();
-    setFriends(res.data.users || []);
-  } catch {
-    setFriends([]);
-  }
-};
+    try {
+      const res = await getMyFriendsApi();
+      setFriends(res.data.users || []);
+    } catch {
+      setFriends([]);
+    }
+  };
 
   /* -------- SOCKET: UNREAD -------- */
     useEffect(() => {
@@ -110,6 +121,9 @@ export function useSidebar() {
   return {
     chats,
     setChats,
+    groups,
+    setGroups,
+    loadGroups,
     allUsers,
     friends,
     filteredUsers,

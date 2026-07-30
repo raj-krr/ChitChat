@@ -8,18 +8,21 @@ export interface IMessageReaction {
 
 export interface IMessage extends Document {
   chatId: Types.ObjectId;
+  groupId?: Types.ObjectId;
   senderId: Types.ObjectId;
-  receiverId: Types.ObjectId;
+  receiverId?: Types.ObjectId;
   text?: string;
   file?: string;
   mimeType: string;
   isRead?: boolean;
   isDeleted?: boolean;
   deletedFor: string[];
-  clientId: string,
+  clientId: string;
   replyTo?: Types.ObjectId | null;
   reactions: IMessageReaction[];
   status: "sending" | "sent" | "delivered" | "read" | "failed";
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 
@@ -30,6 +33,12 @@ const messageSchema = new mongoose.Schema<IMessage>({
       required: true,
       index: true,
   },
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      default: null,
+      index: true,
+    },
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -38,7 +47,7 @@ const messageSchema = new mongoose.Schema<IMessage>({
     receiverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
+        required: false,
     },
     text: { type: String },
   file: { type: String },
@@ -80,6 +89,7 @@ status: {
 }, { timestamps: true });
 
 messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+messageSchema.index({ groupId: 1, createdAt: -1 });
 
 const MessageModel = mongoose.model<IMessage>("Message", messageSchema);
 export const MessageModal = MessageModel;

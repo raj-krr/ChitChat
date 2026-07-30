@@ -53,9 +53,10 @@ export const getChatList = async (req: Request, res: Response) => {
     const myId = new Types.ObjectId(req.user!.userId);
 
     const chats = await MessageModal.aggregate([
-      // 1️⃣ Only messages involving me
+      // 1️⃣ Only 1-on-1 messages involving me (exclude group messages)
       {
         $match: {
+          groupId: { $in: [null, undefined] },
           $or: [{ senderId: myId }, { receiverId: myId }],
         },
       },
@@ -69,10 +70,17 @@ export const getChatList = async (req: Request, res: Response) => {
         },
       },
 
-      // 3️⃣ Sort latest messages first
+      // 3️⃣ Filter out invalid/null otherUser
+      {
+        $match: {
+          otherUser: { $ne: null },
+        },
+      },
+
+      // 4️⃣ Sort latest messages first
       { $sort: { createdAt: -1 } },
 
-      // 4️⃣ Group by other user
+      // 5️⃣ Group by other user
       {
         $group: {
           _id: "$otherUser",
@@ -98,7 +106,7 @@ export const getChatList = async (req: Request, res: Response) => {
         },
       },
 
-      // 5️⃣ Sort chats by last message time
+      // 6️⃣ Sort chats by last message time
       {
         $sort: {
           "lastMessage.createdAt": -1,
@@ -106,8 +114,9 @@ export const getChatList = async (req: Request, res: Response) => {
       },
     ]);
 
-    // 6️⃣ Fetch user details
-    const userIds = chats.map((c) => c._id);
+    // 7️⃣ Fetch user details
+    const validChats = chats.filter((c) => c._id);
+    const userIds = validChats.map((c) => c._id);
 
     const users = await UserMOdel.find({
       _id: { $in: userIds },
@@ -115,11 +124,12 @@ export const getChatList = async (req: Request, res: Response) => {
 
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
-    // 7️⃣ Build final response
-    const chatList = chats.map((chat) => {
-      const user = userMap.get(chat._id.toString());
+    // 8️⃣ Build final response
+    const chatList = validChats.map((chat) => {
+      const chatIdStr = chat._id.toString();
+      const user = userMap.get(chatIdStr);
       const safeAvatar = (!user?.avatar || user.avatar.includes("amazonaws.com"))
-        ? getDefaultAnimeAvatar((user as any)?.gender || "male", chat._id.toString())
+        ? getDefaultAnimeAvatar((user as any)?.gender || "male", chatIdStr)
         : user.avatar;
 
       return {
@@ -154,16 +164,29 @@ export const getMessages = async (req: Request, res: Response) => {
     const { sender, receiver } = req.chatUsers!;
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = parseInt(req.query.skip as string) || 0;
+    const cursor = req.query.cursor as string | undefined;
 
-    const messages = await MessageModal.find({
+    const queryFilter: any = {
       $or: [
         { senderId: sender._id, receiverId: receiver._id },
         { senderId: receiver._id, receiverId: sender._id },
       ],
-    })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
+    };
+
+    if (cursor) {
+      queryFilter.createdAt = { $lt: new Date(cursor) };
+    }
+
+    const fetchLimit = limit + 1;
+
+    let query = MessageModal.find(queryFilter).sort({ createdAt: -1 });
+
+    if (!cursor && skip > 0) {
+      query = query.skip(skip);
+    }
+
+    const messages = await query
+      .limit(fetchLimit)
       .populate("senderId", "username avatar")
       .populate({
         path: "replyTo",
@@ -172,7 +195,18 @@ export const getMessages = async (req: Request, res: Response) => {
           path: "senderId",
           select: "username",
         },
-      })
+      });
+
+    let hasNextPage = false;
+    let nextCursor: string | null = null;
+
+    if (messages.length > limit) {
+      hasNextPage = true;
+      const extra = messages.pop();
+      if (messages.length > 0) {
+        nextCursor = messages[messages.length - 1].createdAt.toISOString();
+      }
+    }
 
     const normalizedMessages = messages.reverse().map((m: any) => ({
       ...m.toObject(),
@@ -190,6 +224,8 @@ export const getMessages = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       messages: normalizedMessages,
+      hasNextPage,
+      nextCursor,
     });
   } catch {
     return res.status(500).json({ success: false });
@@ -428,9 +464,15 @@ export const deleteMessageForEveryone = async (req: Request, res: Response) => {
     await message.save();
 
     const io = getIO();
-    io.to(message.receiverId.toString()).emit("message-deleted", {
-      messageId,
-    });
+    if (message.receiverId) {
+      io.to(message.receiverId.toString()).emit("message-deleted", {
+        messageId,
+      });
+    } else if (message.groupId) {
+      io.to(`group:${message.groupId}`).emit("message-deleted", {
+        messageId,
+      });
+    }
     if (userId) {
       io.to(userId).emit("message-deleted", {
         messageId,
@@ -492,14 +534,19 @@ export const reactToMessage = async (req: Request, res: Response) => {
     const io = getIO();
 
     const senderId = message.senderId.toString();
-    const receiverId = message.receiverId.toString();
+    const targetRoom = message.receiverId 
+      ? message.receiverId.toString() 
+      : (message.groupId ? `group:${message.groupId}` : "");
 
     const payload = {
       messageId: message._id,
       reactions: message.reactions,
     };
 
-    io.to(receiverId).emit("message-reaction", payload);
+    if (targetRoom) {
+      io.to(targetRoom).emit("message-reaction", payload);
+    }
+    io.to(senderId).emit("message-reaction", payload);
     io.to(senderId).emit("message-reaction", payload);
 
     return res.json({

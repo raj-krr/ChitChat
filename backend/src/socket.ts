@@ -73,6 +73,31 @@ export function initSocket(io: Server) {
       }
     });
 
+    // 👥 GROUP SOCKET ROOM EVENTS
+    socket.on("join-group-room", ({ groupId }) => {
+      if (groupId) {
+        socket.join(`group:${groupId}`);
+      }
+    });
+
+    socket.on("leave-group-room", ({ groupId }) => {
+      if (groupId) {
+        socket.leave(`group:${groupId}`);
+      }
+    });
+
+    socket.on("group-typing", ({ groupId }) => {
+      if (groupId) {
+        socket.to(`group:${groupId}`).emit("group-typing", { groupId, from: userId });
+      }
+    });
+
+    socket.on("group-stop-typing", ({ groupId }) => {
+      if (groupId) {
+        socket.to(`group:${groupId}`).emit("group-stop-typing", { groupId, from: userId });
+      }
+    });
+
     socket.on("call-user", async ({ to, offer, user, type }) => {
       if (!to || !offer) return;
 
