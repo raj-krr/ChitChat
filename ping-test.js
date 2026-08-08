@@ -10,7 +10,7 @@
  * USAGE:
  *   node ping-test.js
  *   node ping-test.js http://localhost:5000 200
- *   node ping-test.js https://chitchatt.tech 200
+ *   node ping-test.js https://api.chitchatt.tech 200
  * ------------------------------------------------------------
  */
 
@@ -26,7 +26,7 @@ try {
   }
 }
 
-const SERVER_URL = process.argv[2] || 'https://chitchatt.tech';
+const SERVER_URL = process.argv[2] || 'https://api.chitchatt.tech';
 const SAMPLE_COUNT = parseInt(process.argv[3] || '200', 10);
 const DELAY_BETWEEN_PINGS_MS = 50; // small gap so we're not flooding
 
