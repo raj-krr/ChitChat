@@ -37,7 +37,9 @@ async function startServer() {
           const cleanOrigin = origin.replace(/\/$/, "");
           if (
             allowedOrigins.includes(cleanOrigin) ||
-            cleanOrigin.includes("chitchat")
+            cleanOrigin.includes("chitchat") ||
+            cleanOrigin.includes("localhost") ||
+            cleanOrigin.includes("127.0.0.1")
           ) {
             return callback(null, true);
           }

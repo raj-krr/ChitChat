@@ -61,6 +61,11 @@ export function initSocket(io: Server) {
       socket.emit("online-users", Array.from(onlineUsers.keys()));
     });
 
+    // ⏱️ Round-trip Latency Benchmark Handler
+    socket.on("ping-test", (data) => {
+      socket.emit("pong-test", data);
+    });
+
     socket.on("typing", ({ to }) => {
       if (to) {
         io.to(String(to)).emit("typing", { from: userId });
